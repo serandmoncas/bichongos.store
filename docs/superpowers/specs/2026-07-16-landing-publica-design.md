@@ -53,7 +53,7 @@ SVG propio (no depende del HTML/CSS del handoff), viewBox 54×54, geometría exa
 ### 1. Hero
 - H1: "Bichongos"
 - Tagline (IBM Plex Serif italic): "Hongos premium cultivados con precisión IoT, trazables del sustrato al plato."
-- Firma secundaria (mono, uppercase): "Songo Sorhongo · laboratorio de cultivo en Guarne, Antioquia"
+- Firma secundaria (mono, uppercase): "Laboratorio de cultivo · Guarne, Antioquia"
 - CTA primario: botón "Escribinos por WhatsApp" → `wa.me/573052779142`
 
 ### 2. El problema
@@ -78,7 +78,7 @@ Grid de 4 tarjetas (sin precios):
 ### 5. CTA final + footer
 - H2: "¿Restaurante, tienda o querés probar Bichongos?"
 - Botón WhatsApp (mismo número que el hero)
-- Footer: logo `mono-negative` sobre fondo tinta, ubicación (Guarne, Antioquia), Instagram `@songo_sorhongo`, correo `songosorhongo781@gmail.com`
+- Footer: logo `mono-negative` sobre fondo tinta, ubicación (Guarne, Antioquia), botón/enlace de WhatsApp como único canal de contacto (sin Instagram ni correo todavía — esos son canales de Songo Sorhongo, no de Bichongos; se agregan cuando el proyecto tenga los suyos propios), y crédito secundario en texto pequeño: "Con la asesoría técnica de Songo Sorhongo".
 
 ## Enfoque técnico
 
@@ -88,7 +88,7 @@ Grid de 4 tarjetas (sin precios):
 - Sin componentes cliente (`"use client"`) — la landing es 100% estática, sin interactividad que lo requiera.
 
 ## SEO básico
-- `metadata` en `src/app/layout.tsx`: title "Bichongos · Fungicultura para la vida", description basada en la tagline, Open Graph con imagen del símbolo sobre fondo tinta.
+- `metadata` en `src/app/layout.tsx`: title "Bichongos · Hongos premium cultivados con precisión IoT", description basada en la tagline del hero, Open Graph con imagen del símbolo sobre fondo tinta.
 - Favicon generado desde la variante `icon` del logo (monocromo positivo).
 
 ## Responsive y accesibilidad
