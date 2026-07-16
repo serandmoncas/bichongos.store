@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 
@@ -14,6 +15,12 @@ export function CtaFooter() {
           <p>Guarne, Antioquia</p>
           <p>Con la asesoría técnica de Songo Sorhongo</p>
         </div>
+        <Link
+          href="/login"
+          className="font-mono text-xs uppercase tracking-widest text-crema-claro/40 underline"
+        >
+          Iniciar sesión
+        </Link>
       </div>
     </footer>
   );
