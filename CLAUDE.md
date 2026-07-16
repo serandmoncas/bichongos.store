@@ -96,3 +96,15 @@ Principio clave: **OAuth autentica, la autorización la controla la app** (aprob
 - Componentes de servidor por defecto; client components solo donde haya interactividad.
 - Nunca exponer la `service_role` key en el cliente; RLS es la frontera de seguridad, no el frontend.
 - Trabajar por épica: completar y verificar antes de pasar a la siguiente.
+
+## Bootstrap del primer admin en producción
+El trigger `enforce_role_estado_immutable` (migración 2) bloquea cambios al campo `role` de cualquier perfil a menos que el usuario ya tenga `role = 'admin'`. Esto es correcto por seguridad, pero implica que **no existe un path normal para crear la cuenta admin inicial** (nadie nace como admin). 
+
+Para promover el primer admin en producción, ejecutar en el SQL editor de Supabase (con permisos de service role):
+```sql
+alter table public.profiles disable trigger enforce_role_estado_immutable;
+update public.profiles set role = 'admin' where id = '<user-id>';
+alter table public.profiles enable trigger enforce_role_estado_immutable;
+```
+
+**Advertencia:** este procedimiento debe ejecutarse únicamente a través del SQL editor / service role de la BD, nunca expuesto en la aplicación.
