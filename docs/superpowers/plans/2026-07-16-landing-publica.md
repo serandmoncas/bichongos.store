@@ -221,7 +221,7 @@ git commit -m "land: agrega sistema de marca (tokens de color, tipografía, logo
 
 **Interfaces:**
 - Consumes: `Logo` from `src/components/logo.tsx` (Task 1), theme tokens from Task 1.
-- Produces: `<WhatsAppButton label="..." />` (default export from `whatsapp-button.tsx`, `label` required prop, always links to the fixed number below). `<Hero />` (default export, no props) — later imported by `page.tsx` in Task 4.
+- Produces: `<WhatsAppButton label="..." />` (named export from `whatsapp-button.tsx`, `label` required prop, always links to the fixed number below). `<Hero />` (named export, no props) — later imported by `page.tsx` in Task 4.
 
 - [ ] **Step 1: Write the WhatsApp button**
 
@@ -318,7 +318,7 @@ git commit -m "land: agrega botón de WhatsApp y sección hero"
 
 **Interfaces:**
 - Consumes: theme tokens from Task 1. No dependency on Hero/WhatsAppButton.
-- Produces: `<Problema />` and `<ComoFunciona />` (default exports, no props) — imported by `page.tsx` in Task 4.
+- Produces: `<Problema />` and `<ComoFunciona />` (named exports, no props) — imported by `page.tsx` in Task 4.
 
 - [ ] **Step 1: Write the Problema section**
 
