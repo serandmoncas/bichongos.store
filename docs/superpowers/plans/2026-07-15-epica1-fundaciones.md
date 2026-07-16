@@ -196,7 +196,7 @@ git commit -m "fund: conecta proyecto Supabase con clientes browser/server"
 - Consumes: the buildable Next.js project from Task 1 and env vars from Task 2.
 - Produces: a live production URL at `https://bichongos.store` that later épicas ship against.
 
-- [ ] **Step 1: Log in to Vercel**
+- [x] **Step 1: Log in to Vercel**
 
 Interactive step the user must run themselves:
 
@@ -204,29 +204,38 @@ Interactive step the user must run themselves:
 vercel login
 ```
 
-- [ ] **Step 2: Link and deploy the project**
+Done — CLI authenticated as account `serandmoncas-6387` (team `serandmoncas-6387's projects`, team ID `team_T8hFXEpyLSKKwU1NGjuTkSMA`). Verified with `vercel whoami`.
+
+- [x] **Step 2: Link and deploy the project**
 
 ```bash
-vercel link --yes
-vercel env add NEXT_PUBLIC_SUPABASE_URL production
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
+vercel link --yes --project bichongos
+echo -n "<value>" | vercel env add NEXT_PUBLIC_SUPABASE_URL production
+echo -n "<value>" | vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
 vercel --prod
 ```
 
-Paste the same values from `.env.local` when prompted for each env var.
+Done — new project `bichongos` created and linked under `serandmoncas-6387s-projects` (no prior project with that name existed). Both env vars piped in non-interactively from `.env.local` and confirmed present via `vercel env ls` (Production only). Production deploy succeeded; build compiled cleanly with Next.js 16.2.10 / Turbopack.
 
-- [ ] **Step 3: Verify the preview deployment**
+- [x] **Step 3: Verify the preview deployment**
 
 Run: `curl -s -o /dev/null -w "%{http_code}" <URL_IMPRESA_POR_VERCEL>`
 Expected: `200`
 
-- [ ] **Step 4: Attach the domain**
+Done — deployment aliased to `https://bichongos.vercel.app`, which returns `200`. (The per-deployment URL `https://bichongos-465u9qdly-serandmoncas-6387s-projects.vercel.app` returns `302`, which is expected Vercel deployment-protection/redirect behavior on the raw deployment URL, not the aliased production domain.)
+
+- [x] **Step 4: Attach the domain**
 
 ```bash
 vercel domains add bichongos.store
 ```
 
-Vercel prints the DNS records to add (typically an `A` record to `76.76.21.21` and/or `CNAME` for `www`). Add those records at your domain registrar's DNS panel — this step happens outside the CLI, in the registrar's dashboard.
+Done — domain `bichongos.store` added to project `bichongos`. Vercel reports it is not yet configured and needs one of:
+
+- **Option A (recommended):** `A` record — `bichongos.store` → `76.76.21.21`
+- **Option B:** change nameservers to `ns1.vercel-dns.com` / `ns2.vercel-dns.com` (current: `dns1.registrar-servers.com` / `dns2.registrar-servers.com`)
+
+This step must be completed by the domain owner in the registrar's DNS panel — the agent does not have registrar access. Vercel will email on verification once DNS is set.
 
 - [ ] **Step 5: Verify the domain resolves**
 
@@ -235,7 +244,9 @@ DNS propagation can take up to a few hours. Once it has:
 Run: `curl -s -o /dev/null -w "%{http_code}" https://bichongos.store`
 Expected: `200`
 
-- [ ] **Step 6: Commit deployment notes**
+Blocked on the user/registrar completing Step 4's DNS change — not yet run.
+
+- [x] **Step 6: Commit deployment notes**
 
 ```bash
 git add docs/superpowers/plans/2026-07-15-epica1-fundaciones.md
