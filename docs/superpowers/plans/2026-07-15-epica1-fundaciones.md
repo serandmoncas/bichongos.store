@@ -261,14 +261,12 @@ git commit -m "fund: documenta deploy en Vercel y dominio Bichongos.store"
 - Create: `supabase/migrations/00000000000001_profiles.sql`
 
 **Interfaces:**
-- Consumes: the Supabase project from Task 2 (`npx supabase link --project-ref <PROJECT_REF>` must have been run once).
+- Consumes: the Supabase project from Task 2 (project ref `hmrapzermtnyavqjoesh`, already created).
 - Produces: table `public.profiles(id uuid, email text, nombre text, role user_role, estado text, created_at timestamptz)` and enum `public.user_role`, populated automatically on signup via trigger. Épica 3 (auth middleware) and Épica 4 (admin panel) both read/write this table.
 
-- [ ] **Step 1: Link the local CLI to the remote project**
+- [ ] **Step 1: Apply the migration via the Supabase MCP server**
 
-```bash
-npx supabase link --project-ref <PROJECT_REF>
-```
+No CLI login needed — the controller is already authenticated to project `hmrapzermtnyavqjoesh` via the Supabase MCP server (same as Task 2). Use the MCP `apply_migration` tool directly against that project, passing the SQL from Step 2 below as its `query` and a descriptive `name` (e.g. `profiles`). Also save the same SQL to `supabase/migrations/00000000000001_profiles.sql` in the repo for history/reproducibility, even though the MCP tool — not `supabase db push` — is what actually applies it.
 
 - [ ] **Step 2: Write the migration**
 
@@ -290,28 +288,38 @@ alter table public.profiles enable row level security;
 
 create policy "usuarios leen su propio perfil"
   on public.profiles for select
-  using (auth.uid() = id);
+  to authenticated
+  using ((select auth.uid()) = id);
 
 create policy "usuarios actualizan su propio nombre"
   on public.profiles for update
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
+  to authenticated
+  using ((select auth.uid()) = id)
+  with check ((select auth.uid()) = id);
 
 create policy "admin lee todos los perfiles"
   on public.profiles for select
+  to authenticated
   using (
     exists (
       select 1 from public.profiles p
-      where p.id = auth.uid() and p.role = 'admin'
+      where p.id = (select auth.uid()) and p.role = 'admin'
     )
   );
 
 create policy "admin actualiza todos los perfiles"
   on public.profiles for update
+  to authenticated
   using (
     exists (
       select 1 from public.profiles p
-      where p.id = auth.uid() and p.role = 'admin'
+      where p.id = (select auth.uid()) and p.role = 'admin'
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.profiles p
+      where p.id = (select auth.uid()) and p.role = 'admin'
     )
   );
 
@@ -327,31 +335,34 @@ begin
 end;
 $$;
 
+-- SECURITY DEFINER is required here (only the Auth service can insert into
+-- auth.users, and this trigger must insert into public.profiles on that
+-- user's behalf before any RLS policy on profiles could apply to them).
+-- Postgres grants EXECUTE on new functions to PUBLIC by default, which would
+-- make this callable directly via RPC by anon/authenticated — revoke that,
+-- it must only ever run as this trigger.
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 ```
 
-- [ ] **Step 3: Apply the migration to the remote project**
+- [ ] **Step 3: Verify via the Supabase MCP server**
 
-```bash
-npx supabase db push
-```
+Use the MCP `list_tables` tool (schema `public`) to confirm `profiles` exists with the expected columns, and MCP `get_advisors` (type `security`) to confirm no new security lint issues (e.g. RLS-disabled warnings) were introduced.
 
-Expected: CLI reports the migration applied with no errors.
+- [ ] **Step 4: Verify the trigger end-to-end**
 
-- [ ] **Step 4: Verify the trigger and RLS**
-
-In the Supabase dashboard SQL editor, or via `npx supabase db execute`, run:
+Use the MCP `execute_sql` tool to confirm RLS is enabled:
 
 ```sql
-select column_name, data_type from information_schema.columns where table_name = 'profiles';
 select relrowsecurity from pg_class where relname = 'profiles';
 ```
 
-Expected: the `profiles` columns match the migration, and `relrowsecurity` is `t` (true).
+Expected: `t` (true).
 
-Then, from the app, sign up a throwaway test user via Supabase Auth (dashboard → Authentication → Add user, or the eventual login flow in Épica 3) and confirm a row appears in `profiles` with `role = 'pendiente'`.
+Then, from the Supabase dashboard (Authentication → Add user) or MCP, create a throwaway test user and use `execute_sql` to confirm a row appears in `profiles` with `role = 'pendiente'` for that user's id. Delete the throwaway user afterward.
 
 - [ ] **Step 5: Commit**
 
