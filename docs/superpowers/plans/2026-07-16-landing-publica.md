@@ -32,7 +32,7 @@
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks.
-- Produces: Tailwind utilities `bg-crema`, `bg-crema-claro`, `bg-tinta`, `bg-musgo`, `bg-terracota` (and matching `text-*`, `border-*`) usable by every later task. `font-serif` (IBM Plex Serif) and `font-mono` (IBM Plex Mono) Tailwind utilities. A `Logo` component: `<Logo variant="horizontal" | "inline" | "mono-negative" | "icon" />`, default export, no props beyond `variant` (optional `className` passthrough for sizing).
+- Produces: Tailwind utilities `bg-crema`, `bg-crema-claro`, `bg-tinta`, `bg-musgo`, `bg-terracota` (and matching `text-*`, `border-*`) usable by every later task. `font-serif` (IBM Plex Serif) and `font-mono` (IBM Plex Mono) Tailwind utilities. A `Logo` component: `<Logo variant="horizontal" | "inline" | "mono-negative" | "icon" />`, named export (`import { Logo } from "@/components/logo"`), no props beyond `variant` (optional `className` passthrough for sizing).
 
 - [ ] **Step 1: Replace theme tokens in `globals.css`**
 
