@@ -5,6 +5,7 @@
   --color-crema-claro: oklch(98% 0.008 75);
   --color-tinta: oklch(20% 0.02 90);
   --color-musgo: oklch(56% 0.13 150);
+  --color-musgo-oscuro: oklch(46% 0.13 150);
   --color-terracota: oklch(56% 0.15 40);
   --font-serif: var(--font-plex-serif);
   --font-mono: var(--font-plex-mono);

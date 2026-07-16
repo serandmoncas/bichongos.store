@@ -16,6 +16,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://bichongos.store"),
   title: "Bichongos · Hongos premium cultivados con precisión IoT",
   description:
     "Hongos premium cultivados con precisión IoT, trazables del sustrato al plato. Laboratorio de cultivo en Guarne, Antioquia.",
