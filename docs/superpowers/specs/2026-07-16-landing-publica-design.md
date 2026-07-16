@@ -2,7 +2,7 @@
 
 ## Contexto de negocio
 
-**Bichongos** es la marca comercial de **Songo Sorhongo** ("Fungicultura para la vida"), un laboratorio de cultivo de hongos gourmet y funcionales con trazabilidad IoT en Guarne, Antioquia. Fundadoras: **María Isabel Álvarez Vera** (dirección, cultivo, relación con clientes) y **Sergio Monsalve** (sistema IoT y automatización).
+**Bichongos** es un proyecto de **Juan Ballesteros** y **Daniela Arango**, con la asesoría de **Songo Sorhongo** ("Fungicultura para la vida") — el laboratorio de cultivo de hongos gourmet y funcionales con trazabilidad IoT en Guarne, Antioquia, dirigido por María Isabel Álvarez Vera y Sergio Monsalve, que aporta el sistema de cultivo IoT y el know-how técnico. El material fuente (pitch deck, identidad visual) fue producido desde Songo Sorhongo como asesor; Bichongos es el proyecto/marca resultante.
 
 **El problema que resuelve:** todo el hongo disponible en el mercado antioqueño se cultiva "a ciegas" — el importado (champiñón de Bogotá, shiitake de China) pierde 3–7 días de frescura y no tiene información de origen; el cultivo artesanal local tampoco registra humedad, lote ni condiciones, así que la calidad varía de cosecha a cosecha sin que nadie sepa por qué; y las variedades funcionales premium (melena de león, reishi, cordyceps) casi no se consiguen frescas.
 
@@ -102,4 +102,4 @@ Grid de 4 tarjetas (sin precios):
 - **Sin precios públicos todavía** — el CTA de WhatsApp cotiza. Fácil de agregar precios por línea de producto después si se define una lista pública.
 - **Sin fotografía real** — no hay assets de producto/laboratorio aún (confirmado en el handoff de identidad); las secciones usan la paleta de marca y el símbolo en vez de fotos placeholder.
 - **CTA único: WhatsApp** al número `+57 305 2779142` (distinto al que aparece en el pitch deck, `+57 350 2440674` — se usa el nuevo número indicado explícitamente para el sitio).
-- **No se muestra el equipo/fundadoras en esta landing** — el pitch deck las presenta, pero Épica 2 no incluye una sección "quiénes somos" en el backlog; se puede agregar como historia futura si se quiere.
+- **No se muestra el equipo/fundadores en esta landing** — el pitch deck presenta al equipo de Songo Sorhongo como asesor técnico, pero Épica 2 no incluye una sección "quiénes somos" en el backlog; se puede agregar como historia futura (mencionando a Juan Ballesteros y Daniela Arango como fundadores de Bichongos, con Songo Sorhongo como asesoría) si se quiere.
