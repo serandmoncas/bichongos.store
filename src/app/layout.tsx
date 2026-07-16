@@ -16,8 +16,16 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bichongos",
-  description: "Bichongos",
+  title: "Bichongos · Hongos premium cultivados con precisión IoT",
+  description:
+    "Hongos premium cultivados con precisión IoT, trazables del sustrato al plato. Laboratorio de cultivo en Guarne, Antioquia.",
+  openGraph: {
+    title: "Bichongos",
+    description:
+      "Hongos premium cultivados con precisión IoT, trazables del sustrato al plato.",
+    locale: "es_CO",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
