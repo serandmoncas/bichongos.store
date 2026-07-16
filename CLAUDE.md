@@ -1,10 +1,14 @@
 # Bichongos — Contexto del proyecto
 
 ## Qué es
-Bichongos es la plataforma web del proyecto de cultivo de hongos. Vive en **Bichongos.store** y tiene dos partes:
+Bichongos es un proyecto de **Juan Ballesteros** y **Daniela Arango**, con la asesoría técnica de **Songo Sorhongo** ("Fungicultura para la vida" — laboratorio de cultivo de hongos gourmet/funcionales con trazabilidad IoT en Guarne, Antioquia, dirigido por María Isabel Álvarez Vera y Sergio Monsalve). Songo Sorhongo aporta el sistema de cultivo IoT (cápsulas con sensores de temperatura/humedad/CO₂/luz) y la trazabilidad por lote vía QR — el problema que resuelve: el hongo disponible en el mercado (importado o artesanal local) se cultiva "a ciegas", sin datos ni trazabilidad.
+
+Este repo es la plataforma web del proyecto. Vive en **Bichongos.store** y tiene dos partes:
 
 1. **Landing pública**: presenta el proyecto (marketing, qué es, CTA de contacto).
 2. **Panel de administración** (`/admin`): área autenticada donde las personas capacitadas administran el cultivo de hongos.
+
+Detalle de negocio, identidad de marca y copy de referencia para la landing: `docs/superpowers/specs/2026-07-16-landing-publica-design.md`.
 
 ## Usuarios y roles
 Autenticación con **Google OAuth**. La autorización es por rol:
