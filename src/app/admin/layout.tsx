@@ -20,7 +20,7 @@ export default async function AdminLayout({
     .eq("id", user.sub)
     .single();
 
-  if (profile?.role === "pendiente") {
+  if (!profile || profile.role === "pendiente") {
     redirect("/pendiente");
   }
 
