@@ -20,6 +20,8 @@ Autenticación con **Google OAuth**. La autorización es por rol:
 
 Principio clave: **OAuth autentica, la autorización la controla la app** (aprobación manual por admin, no whitelist automática de cualquier cuenta Google).
 
+**Google OAuth está configurado y verificado end-to-end** (Épica 3, 2026-07-22): credenciales reales conectadas en Supabase Auth → Providers → Google. Flujo probado completo: login con Google → creación automática de perfil `pendiente` → gate por rol funcionando en ambos sentidos (`pendiente` → `/pendiente`, rol aprobado → `/admin`) → logout. `serandmoncas@gmail.com` (Sergio Monsalve) es el primer admin real, promovido vía el procedimiento de bootstrap de abajo.
+
 ## Stack
 - **Frontend**: Next.js (App Router) + TypeScript, deploy en **Vercel**.
 - **Backend / DB / Auth**: **Supabase** (Postgres, Supabase Auth con provider de Google, Row Level Security, Realtime para telemetría futura).
