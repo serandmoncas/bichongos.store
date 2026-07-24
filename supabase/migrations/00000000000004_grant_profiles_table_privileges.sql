@@ -1,0 +1,15 @@
+-- La migración 00000000000001_profiles.sql definió políticas RLS para
+-- public.profiles pero nunca otorgó los privilegios base de tabla a los
+-- roles anon/authenticated. En Postgres, RLS y GRANT son dos capas
+-- independientes: una policy permisiva NO alcanza sin el GRANT de tabla
+-- correspondiente. Sin este GRANT, toda select/update sobre profiles falla
+-- con "permission denied for table profiles" (42501) para cualquier usuario
+-- autenticado, sin importar su rol.
+--
+-- Esto rompía el gate por rol completo: el layout de /admin (y de
+-- /pendiente) no podía leer ningún perfil, así que trataba el error como
+-- "perfil no encontrado" y redirigía siempre a /pendiente — incluso para
+-- usuarios admin. Descubierto al verificar e2e/auth-gate.spec.ts (Task 5)
+-- contra un stack local limpio: el test de admin fallaba porque el usuario
+-- terminaba en /pendiente pese a tener role = 'admin' en la base de datos.
+grant select, update on public.profiles to authenticated;
