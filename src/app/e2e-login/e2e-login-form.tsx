@@ -6,15 +6,13 @@ import { createClient } from "@/lib/supabase/client";
 
 export function E2ELoginForm() {
   const searchParams = useSearchParams();
+  const email = searchParams.get("email");
+  const password = searchParams.get("password");
+  const next = searchParams.get("next") ?? "/admin";
   const [status, setStatus] = useState("Iniciando sesión de prueba...");
 
   useEffect(() => {
-    const email = searchParams.get("email");
-    const password = searchParams.get("password");
-    const next = searchParams.get("next") ?? "/admin";
-
     if (!email || !password) {
-      setStatus("Faltan email o password en la URL");
       return;
     }
 
@@ -26,7 +24,11 @@ export function E2ELoginForm() {
       }
       window.location.href = next;
     });
-  }, [searchParams]);
+  }, [email, password, next]);
+
+  if (!email || !password) {
+    return <p>Faltan email o password en la URL</p>;
+  }
 
   return <p>{status}</p>;
 }
