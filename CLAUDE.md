@@ -16,6 +16,7 @@ Autenticación con **Google OAuth**. La autorización es por rol:
 - `admin`: gestión total — usuarios, roles, cultivo, contenidos.
 - `profesor`: supervisa el cultivo, asigna tareas, sube contenidos de capacitación.
 - `estudiante`: registra tareas diarias del cultivo, consume contenidos de capacitación.
+- `operador`: registra tareas diarias del cultivo y además crea/edita lotes (más permisos que `estudiante`); no asigna tareas ni supervisa — eso sigue siendo de `profesor`/`admin`.
 - `pendiente`: estado inicial de todo usuario nuevo tras el primer login con Google. Un admin debe aprobarlo y asignarle rol. **Nadie con rol `pendiente` accede al panel** — ve una pantalla de "cuenta pendiente de aprobación".
 
 Principio clave: **OAuth autentica, la autorización la controla la app** (aprobación manual por admin, no whitelist automática de cualquier cuenta Google).
@@ -29,7 +30,7 @@ Principio clave: **OAuth autentica, la autorización la controla la app** (aprob
 - Idioma de la UI: **español**.
 
 ## Modelo de datos inicial
-- `profiles`: id (= auth.users.id), email, nombre, role (enum: pendiente | estudiante | profesor | admin), estado (activo/inactivo), created_at.
+- `profiles`: id (= auth.users.id), email, nombre, role (enum: pendiente | estudiante | operador | profesor | admin), estado (activo/inactivo), created_at.
   - Trigger: al primer login se crea el perfil con rol `pendiente`.
 - `lotes`: id, nombre, especie, sustrato, fecha_inicio, estado, notas.
 - `registros`: id, lote_id, user_id, tipo (riego, humedad, temperatura, observación), valor, foto_url, created_at. Bitácora cronológica por lote.
