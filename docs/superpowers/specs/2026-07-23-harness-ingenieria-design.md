@@ -41,7 +41,12 @@ Vercel sigue desplegando preview/producción exactamente como hoy; no se toca es
   1. Login con Google → creación de perfil `pendiente` → pantalla de "cuenta pendiente".
   2. Gate por rol en `/admin`: rol no aprobado → redirect a `/pendiente`; rol aprobado → acceso.
   3. Logout.
-- Como automatizar el consentimiento real de Google OAuth en CI no es viable (ni deseable), los tests **mockean la cookie de sesión de Supabase** con un usuario de prueba y perfil con el rol que corresponda al escenario, en vez de pasar por el flow de Google real. Esto prueba el gate de la app, que es lo que realmente queremos verificar aquí — no el proveedor OAuth de Google.
+- Como automatizar el consentimiento real de Google OAuth en CI no es viable (ni deseable), y como `getClaims()` verifica el JWT de sesión contra las claves del proyecto (JWKS) o vía `getUser()` — verificación que ocurre en el servidor de Next.js, no interceptable desde el navegador con Playwright — los tests usan una **instancia local real de Supabase** (Supabase CLI, vía Docker) en vez de fabricar cookies o JWTs a mano:
+  1. CI levanta Supabase local (`supabase start`) y aplica las migraciones existentes de `supabase/migrations/`.
+  2. Un script de setup crea usuarios de prueba vía la Admin API (`service_role`) con contraseña y `email_confirm: true`, con el rol de perfil que cada escenario necesita (`pendiente`, `admin`) — fijado con acceso directo a Postgres (`disable trigger` / `update` / `enable trigger`), reutilizando el mismo procedimiento de bootstrap ya documentado en CLAUDE.md.
+  3. Se agrega una ruta inerte solo-para-tests (`src/app/e2e-login/page.tsx`) que usa el mismo `createClient()` del navegador que ya usa el resto de la app y llama `signInWithPassword()` — esto evita la incertidumbre del flujo PKCE/magic-link (que depende de un `code_verifier` que solo existe en un navegador real) y hace que el navegador guarde la sesión en cookies exactamente como con el login real de Google. La ruta solo funciona si `NEXT_PUBLIC_E2E_TEST_MODE=true`; sin esa env var (nunca seteada en Vercel/producción) devuelve `notFound()`.
+  4. Cada test navega a `/e2e-login` con las credenciales del usuario de prueba, y desde ahí a `/admin` — ejercitando el gate real de middleware + `admin/layout.tsx`, código de producción sin dobles.
+  - Esto es más lento de levantar en CI (~30-60s extra) pero no depende de reproducir formatos internos de `@supabase/ssr` ni de adivinar cómo se firma un JWT — usa exactamente el mismo camino de verificación que producción.
 - No hay nada más que testear todavía (Épicas 4/5 pendientes). Cuando se implementen, sus specs deben incluir criterios de aceptación testeables desde el inicio (sección 3).
 
 ### 3. Reglas de proceso en CLAUDE.md
