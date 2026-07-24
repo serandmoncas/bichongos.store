@@ -21,8 +21,6 @@ test("un usuario con rol admin accede al panel", async ({ page }) => {
     `/e2e-login?email=${encodeURIComponent(user.email)}&password=${encodeURIComponent(user.password)}&next=/admin`
   );
 
-  await expect(page).toHaveURL(/\/admin$/);
-  await expect(
-    page.getByText(/panel de administración está en construcción/i)
-  ).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/usuarios$/);
+  await expect(page.getByRole("heading", { name: "Usuarios" })).toBeVisible();
 });

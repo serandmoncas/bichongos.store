@@ -7,7 +7,7 @@ const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const DB_URL =
   process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
-export type TestRole = "pendiente" | "admin";
+export type TestRole = "pendiente" | "estudiante" | "operador" | "profesor" | "admin";
 
 export interface TestUser {
   email: string;
