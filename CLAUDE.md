@@ -44,55 +44,58 @@ Principio clave: **OAuth autentica, la autorización la controla la app** (aprob
 
 ## Backlog priorizado
 
-### Épica 1 — Fundaciones (Sprint 0)
-1. Repo + proyecto Next.js con TypeScript y estructura base
-2. Proyecto Supabase + variables de entorno
-3. Deploy en Vercel + dominio Bichongos.store
-4. Modelo de datos inicial: `profiles`, enum de roles
+### Épica 1 — Fundaciones (Sprint 0) ✅
+1. ✅ Repo + proyecto Next.js con TypeScript y estructura base
+2. ✅ Proyecto Supabase + variables de entorno
+3. ✅ Deploy en Vercel + dominio Bichongos.store
+4. ✅ Modelo de datos inicial: `profiles`, enum de roles
 
-### Épica 2 — Landing pública
-5. Landing: hero, qué es Bichongos, propuesta de valor, CTA
-6. Sección "cómo funciona" / el cultivo
-7. CTA de contacto/interés
-8. SEO básico: metadata, Open Graph, favicon
-9. Responsive y accesibilidad mínima
+### Épica 2 — Landing pública ✅
+5. ✅ Landing: hero, qué es Bichongos, propuesta de valor, CTA
+6. ✅ Sección "cómo funciona" / el cultivo
+7. ✅ CTA de contacto/interés
+8. ✅ SEO básico: metadata, Open Graph, favicon
+9. ✅ Responsive y accesibilidad mínima
 
-### Épica 3 — Autenticación y roles (núcleo del MVP)
-10. Google OAuth en Supabase Auth (credenciales en Google Cloud Console)
-11. Login/logout desde la landing
-12. Trigger en DB: primer login → perfil con rol `pendiente`
-13. Políticas RLS por rol en todas las tablas
-14. Middleware de Next.js que protege `/admin` y redirige según rol
-15. Pantalla de "cuenta pendiente de aprobación"
+### Épica 3 — Autenticación y roles (núcleo del MVP) ✅
+10. ✅ Google OAuth en Supabase Auth (credenciales en Google Cloud Console)
+11. ✅ Login/logout desde la landing
+12. ✅ Trigger en DB: primer login → perfil con rol `pendiente`
+13. ✅ Políticas RLS por rol en todas las tablas
+14. ✅ Middleware de Next.js que protege `/admin` y redirige según rol
+15. ✅ Pantalla de "cuenta pendiente de aprobación"
 
-### Épica 4 — Panel de administración
-16. Layout del admin: navegación, header con usuario y rol
-17. Gestión de usuarios (solo admin): listar, aprobar, cambiar rol, desactivar
-18. Perfil propio: editar nombre, ver rol
-19. Auditoría básica (`activity_log`)
+### Épica 4 — Panel de administración 🚧 (siguiente prioritaria)
+**Antes de tocar código: decidir el rol "operador"** para el personal que va a operar el cultivo día a día (Lore y Fredy) — hoy el enum de roles no lo modela explícitamente; hay que definir si mapea al rol `estudiante` existente o si se necesita un rol nuevo, y qué debe poder ver/hacer exactamente. Es una decisión de producto (brainstorming), no inferible del código.
+16. ⏳ Layout del admin: navegación, header con usuario y rol
+17. ⏳ Gestión de usuarios (solo admin): listar, aprobar, cambiar rol, desactivar
+18. ⏳ Perfil propio: editar nombre, ver rol
+19. ⏳ Auditoría básica (`activity_log`)
 
 ### Épica 5 — Gestión del cultivo
-20. Modelo de datos del cultivo: lotes
-21. CRUD de lotes (profesor/admin crean y editan; estudiantes registran)
-22. Registro de tareas diarias: riego, humedad, temperatura, observaciones, fotos
-23. Bitácora por lote: historial cronológico
-24. Vistas por rol: estudiantes ven sus tareas; profesores supervisan y asignan
+20. ⏳ Modelo de datos del cultivo: lotes
+21. ⏳ CRUD de lotes (profesor/admin crean y editan; estudiantes registran)
+22. ⏳ Registro de tareas diarias: riego, humedad, temperatura, observaciones, fotos
+23. ⏳ Bitácora por lote: historial cronológico
+24. ⏳ Vistas por rol: estudiantes ven sus tareas; profesores supervisan y asignan
 
 ### Épica 6 — Capacitación (post-MVP)
-25. Módulo de contenidos (suben profesores)
-26. Seguimiento de progreso por estudiante
-27. Checklist de competencias antes de acceso a operaciones reales
+Reutilizar contenido existente: los SOPs y fichas de especies del repo `Bichongos` (I+D de Sergio Monsalve, `github.com/serandmoncas/Bichongos`) son candidatos directos en vez de escribir contenido de cero.
+25. ⏳ Módulo de contenidos (suben profesores)
+26. ⏳ Seguimiento de progreso por estudiante
+27. ⏳ Checklist de competencias antes de acceso a operaciones reales
 
 ### Épica 7 — IoT / Telemetría (post-MVP)
-28. Endpoint de telemetría para ESP32 (API key por dispositivo)
-29. Tabla de lecturas vinculada a lotes
-30. Dashboard en tiempo real (Supabase Realtime): humedad, temperatura, CO₂
-31. Alertas por variables fuera de rango
+Solo tiene sentido cuando Juan/Daniela tengan su propia cápsula física funcionando.
+28. ⏳ Endpoint de telemetría para ESP32 (API key por dispositivo)
+29. ⏳ Tabla de lecturas vinculada a lotes
+30. ⏳ Dashboard en tiempo real (Supabase Realtime): humedad, temperatura, CO₂
+31. ⏳ Alertas por variables fuera de rango
 
 ### Épica 8 — Calidad y operación
-32. Pruebas de flujos críticos (auth, permisos por rol)
-33. Backups y política de datos en Supabase
-34. Documentación de onboarding para usuarios capacitados
+32. ✅ Pruebas de flujos críticos (auth, permisos por rol) — adelantada fuera de orden como parte del harness de ingeniería (2026-07-24): CI en GitHub Actions (lint/typecheck/build/unit siempre, E2E con Supabase local en cada PR), Vitest para unit, Playwright para E2E del gate por rol. Ver `docs/superpowers/specs/2026-07-23-harness-ingenieria-design.md`.
+33. ⏳ Backups y política de datos en Supabase
+34. ⏳ Documentación de onboarding para usuarios capacitados
 
 ## Definición del MVP
 Épicas 1–4 completas + historias 20–23. Resultado: landing en producción, login con Google, roles funcionando, registro básico del cultivo.
