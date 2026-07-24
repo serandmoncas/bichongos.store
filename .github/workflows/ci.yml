@@ -35,3 +35,36 @@ jobs:
 
       - name: Unit tests
         run: npm run test
+
+      - name: Setup Supabase CLI
+        if: github.event_name == 'pull_request'
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local stack
+        if: github.event_name == 'pull_request'
+        run: npx supabase start
+
+      - name: Export Supabase local env vars
+        if: github.event_name == 'pull_request'
+        run: |
+          npx supabase status -o env > /tmp/supabase-status.env
+          cat /tmp/supabase-status.env
+          echo "NEXT_PUBLIC_SUPABASE_URL=$(grep '^API_URL=' /tmp/supabase-status.env | cut -d '=' -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep '^ANON_KEY=' /tmp/supabase-status.env | cut -d '=' -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(grep '^SERVICE_ROLE_KEY=' /tmp/supabase-status.env | cut -d '=' -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          echo "SUPABASE_DB_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_E2E_TEST_MODE=true" >> "$GITHUB_ENV"
+
+      - name: Install Playwright browsers
+        if: github.event_name == 'pull_request'
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests
+        if: github.event_name == 'pull_request'
+        run: npm run test:e2e
+
+      - name: Stop Supabase local stack
+        if: always() && github.event_name == 'pull_request'
+        run: npx supabase stop
