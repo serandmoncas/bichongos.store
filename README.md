@@ -4,6 +4,8 @@ Landing pública y (próximamente) panel de administración para **Bichongos**, 
 
 **🔗 [bichongos.store](https://bichongos.store)**
 
+![Cápsula de cultivo controlada por IoT](docs/screenshots/capsula-iot.jpg)
+
 ## Capturas
 
 | Hero | El problema |
@@ -16,11 +18,21 @@ Landing pública y (próximamente) panel de administración para **Bichongos**, 
 
 ## Sobre el proyecto
 
-Bichongos es un proyecto de **Juan Ballesteros** y **Daniela Arango**, con la asesoría técnica de **Songo Sorhongo** (laboratorio de cultivo con trazabilidad IoT). El sitio resuelve dos necesidades: presentar el proyecto al público (landing) y darle a las personas capacitadas un panel para administrar el cultivo día a día.
+Bichongos es un proyecto de **Juan Ballesteros** y **Daniela Arango**, con la asesoría técnica de **Songo Sorhongo** (laboratorio de cultivo con trazabilidad IoT, dirigido por María Isabel Álvarez Vera y Sergio Monsalve). El sitio resuelve dos necesidades: presentar el proyecto al público (landing) y darle a las personas capacitadas un panel para administrar el cultivo día a día.
 
 El problema que resuelve: el hongo disponible en el mercado —importado o artesanal— se cultiva "a ciegas", sin trazabilidad ni datos de cultivo. Bichongos cultiva en cápsulas controladas por IoT (temperatura, humedad, CO₂, luz) con trazabilidad completa por lote vía QR.
 
+![Sin trazabilidad vs. trazabilidad completa por lote](docs/screenshots/trazabilidad.jpg)
+
 Diseñé y construí esto de punta a punta: arquitectura, base de datos, autenticación, sistema de diseño y despliegue, con **asistencia de Claude Code** en todo el proceso — desde la investigación contra documentación viva hasta la revisión de código y seguridad en cada entrega.
+
+### El sistema detrás: cápsulas de cultivo controlado por IoT
+
+La base técnica que este panel administra es un sistema de **cápsulas de bajo costo con control total de temperatura, humedad, CO₂ y luz**, que permite cultivar cualquier especie de hongo (gourmet, funcional o medicinal) independientemente del clima local — cada especie tiene un *perfil de cepa* con sus parámetros exactos por etapa (incubación, fructificación), y el mismo perfil es reproducible en cualquier cápsula, en cualquier sede.
+
+![Algunas de las especies del roadmap de cultivo](docs/screenshots/especies.jpg)
+
+El diseño, firmware (ESP32) y protocolos de cultivo de ese sistema son investigación y desarrollo propios de Sergio Monsalve, documentados en un repositorio aparte: **[serandmoncas/Bichongos](https://github.com/serandmoncas/Bichongos)**. Este repo (`bichongos.store`) es la capa de producto — landing pública y panel de administración — que se apoya en esa base técnica.
 
 ## Stack técnico
 
