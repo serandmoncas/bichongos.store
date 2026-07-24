@@ -103,6 +103,30 @@ Principio clave: **OAuth autentica, la autorización la controla la app** (aprob
 - Nunca exponer la `service_role` key en el cliente; RLS es la frontera de seguridad, no el frontend.
 - Trabajar por épica: completar y verificar antes de pasar a la siguiente.
 
+## Ciclo de desarrollo (harness de ingeniería)
+
+Ver `docs/superpowers/specs/2026-07-23-harness-ingenieria-design.md` para el diseño completo. Resumen operativo:
+
+**Spec mínima según el tamaño del cambio:**
+- Fix trivial / typo: una frase de intención + 1 criterio.
+- Feature pequeña: historia de usuario + 2-4 criterios en lista.
+- Feature con estado/flujo: historia + escenarios Gherkin + restricciones.
+- Cambio estructural: lo anterior + plan de pasos + no-objetivos explícitos.
+
+**Un criterio de aceptación es una regla de negocio, no un detalle técnico.** Se escribe en términos que Juan o Daniela podrían leer y aprobar ("un cupón vigente reduce el total"), nunca en términos de implementación ("el campo se guarda en la tabla X"). Si al refactorizar hay que reescribir el criterio, no era un criterio de aceptación — era un chequeo técnico disfrazado.
+
+**Definition of Done** — nada se da por terminado sin:
+- [ ] Todos los criterios de aceptación cubiertos por test o verificación manual explícita.
+- [ ] El pipeline de CI en verde (lint, typecheck, build, tests).
+- [ ] Ejecución real al menos una vez — no solo "compila".
+- [ ] Fallos, si los hubo durante el desarrollo, reportados con su salida (nunca silenciados).
+- [ ] Decisiones y *gotchas* no obvios registrados en memoria persistente.
+- [ ] La spec actualizada si algo cambió durante la implementación respecto a lo planeado.
+
+**Regla de honestidad:** "hecho y verificado" se afirma solo cuando de verdad se verificó. Un test que falla se reporta con su salida; no hay estados intermedios que "parecen" funcionar.
+
+**Antipatrones a evitar:** spec en el chat en vez de en archivo versionado, generar código sin especificar primero, aceptar un diff sin entenderlo línea por línea, confianza silenciosa (dar algo por bueno porque "compila"), big-bang build (cambios tan grandes que no se pueden revisar ni revertir con confianza).
+
 ## Bootstrap del primer admin en producción
 El trigger `enforce_role_estado_immutable` (migración 2) bloquea cambios al campo `role` de cualquier perfil a menos que el usuario ya tenga `role = 'admin'`. Esto es correcto por seguridad, pero implica que **no existe un path normal para crear la cuenta admin inicial** (nadie nace como admin). 
 
