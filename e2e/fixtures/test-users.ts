@@ -40,13 +40,9 @@ export async function createTestUser(role: TestRole): Promise<TestUser> {
     const db = new Client({ connectionString: DB_URL });
     await db.connect();
     try {
-      await db.query(
-        "alter table public.profiles disable trigger enforce_role_estado_immutable"
-      );
+      await db.query("set session_replication_role = replica");
       await db.query("update public.profiles set role = $1 where id = $2", [role, id]);
-      await db.query(
-        "alter table public.profiles enable trigger enforce_role_estado_immutable"
-      );
+      await db.query("set session_replication_role = default");
     } finally {
       await db.end();
     }
