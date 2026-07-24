@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { Logo } from "@/components/logo";
+import { signOut } from "@/app/actions/auth";
 
 export default async function AdminLayout({
   children,
@@ -16,7 +19,7 @@ export default async function AdminLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, email, nombre")
     .eq("id", user.sub)
     .single();
 
@@ -24,5 +27,33 @@ export default async function AdminLayout({
     redirect("/pendiente");
   }
 
-  return <>{children}</>;
+  return (
+    <div className="flex min-h-full flex-col">
+      <header className="flex items-center justify-between border-b border-tinta/10 px-6 py-4">
+        <div className="flex items-center gap-8">
+          <Logo variant="inline" />
+          <nav className="flex gap-4 font-mono text-sm uppercase tracking-wide">
+            <Link href="/admin/usuarios" className="text-tinta/70 hover:text-tinta">
+              Usuarios
+            </Link>
+          </nav>
+        </div>
+        <div className="flex items-center gap-4 font-mono text-sm">
+          <span className="text-tinta/70">
+            {profile.nombre ?? profile.email}{" "}
+            <span className="uppercase text-musgo-oscuro">({profile.role})</span>
+          </span>
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="uppercase tracking-wide text-musgo-oscuro underline"
+            >
+              Cerrar sesión
+            </button>
+          </form>
+        </div>
+      </header>
+      <main className="flex-1">{children}</main>
+    </div>
+  );
 }
