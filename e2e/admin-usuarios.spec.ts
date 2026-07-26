@@ -20,7 +20,10 @@ test("un admin ve la lista de usuarios y aprueba a un pendiente como operador", 
   const row = page.locator("tbody tr", { hasText: pendiente.email });
   await expect(row).toBeVisible();
 
-  await row.locator("select").selectOption("operador");
+  const select = row.locator("select");
+  await select.selectOption("operador");
+  await expect(select).toBeDisabled();
+  await expect(select).toBeEnabled();
   await page.reload();
 
   const updatedRow = page.locator("tbody tr", { hasText: pendiente.email });
