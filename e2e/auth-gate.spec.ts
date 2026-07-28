@@ -24,3 +24,16 @@ test("un usuario con rol admin accede al panel", async ({ page }) => {
   await expect(page).toHaveURL(/\/admin\/usuarios$/);
   await expect(page.getByRole("heading", { name: "Usuarios" })).toBeVisible();
 });
+
+test("un no-admin que entra a /admin sin next= cae en /admin/perfil, no en un 404", async ({
+  page,
+}) => {
+  const user = await createTestUser("estudiante");
+
+  await page.goto(
+    `/e2e-login?email=${encodeURIComponent(user.email)}&password=${encodeURIComponent(user.password)}&next=/admin`
+  );
+
+  await expect(page).toHaveURL(/\/admin\/perfil$/);
+  await expect(page.getByRole("heading", { name: "Mi perfil" })).toBeVisible();
+});
