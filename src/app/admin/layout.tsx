@@ -33,8 +33,13 @@ export default async function AdminLayout({
         <div className="flex items-center gap-8">
           <Logo variant="inline" />
           <nav className="flex gap-4 font-mono text-sm uppercase tracking-wide">
-            <Link href="/admin/usuarios" className="text-tinta/70 hover:text-tinta">
-              Usuarios
+            {profile.role === "admin" && (
+              <Link href="/admin/usuarios" className="text-tinta/70 hover:text-tinta">
+                Usuarios
+              </Link>
+            )}
+            <Link href="/admin/perfil" className="text-tinta/70 hover:text-tinta">
+              Mi perfil
             </Link>
           </nav>
         </div>
