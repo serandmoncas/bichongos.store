@@ -38,7 +38,7 @@ test("un profesor no puede ver /admin/usuarios", async ({ page }) => {
   );
 
   await expect(
-    page.getByRole("heading", { name: "This page could not be found." })
+    page.getByRole("heading", { name: "Esta sección aún no existe para tu rol" })
   ).toBeVisible();
 });
 
