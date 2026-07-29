@@ -51,16 +51,9 @@ export default async function LotesPage() {
           {(lotes ?? []).map((lote) => (
             <tr key={lote.id} className="border-b border-tinta/5">
               <td className="py-2 pr-4">
-                {canEdit ? (
-                  <Link
-                    href={`/admin/lotes/${lote.id}`}
-                    className="text-musgo-oscuro underline"
-                  >
-                    {lote.nombre}
-                  </Link>
-                ) : (
-                  lote.nombre
-                )}
+                <Link href={`/admin/lotes/${lote.id}`} className="text-musgo-oscuro underline">
+                  {lote.nombre}
+                </Link>
               </td>
               <td className="py-2 pr-4">{lote.especie}</td>
               <td className="py-2 pr-4">{lote.estado}</td>
