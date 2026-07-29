@@ -34,9 +34,14 @@ export default async function AdminLayout({
           <Logo variant="inline" />
           <nav className="flex gap-4 font-mono text-sm uppercase tracking-wide">
             {profile.role === "admin" && (
-              <Link href="/admin/usuarios" className="text-tinta/70 hover:text-tinta">
-                Usuarios
-              </Link>
+              <>
+                <Link href="/admin/usuarios" className="text-tinta/70 hover:text-tinta">
+                  Usuarios
+                </Link>
+                <Link href="/admin/auditoria" className="text-tinta/70 hover:text-tinta">
+                  Auditoría
+                </Link>
+              </>
             )}
             <Link href="/admin/perfil" className="text-tinta/70 hover:text-tinta">
               Mi perfil
