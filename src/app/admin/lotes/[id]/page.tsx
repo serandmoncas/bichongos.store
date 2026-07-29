@@ -50,13 +50,15 @@ export default async function LoteDetallePage({
     .eq("lote_id", id)
     .order("created_at", { ascending: false });
 
+  type Perfil = { id: string; nombre: string | null; email: string };
+
   const userIds = Array.from(new Set((registros ?? []).map((r) => r.user_id)));
-  const { data: perfiles } = userIds.length
-    ? await supabase.from("profiles").select("id, nombre, email").in("id", userIds)
-    : { data: [] as { id: string; nombre: string | null; email: string }[] };
+  const { data: perfiles }: { data: Perfil[] | null } = userIds.length
+    ? await supabase.rpc("nombres_de_usuarios", { ids: userIds })
+    : { data: [] };
 
   const nombreDe = (userId: string) => {
-    const p = perfiles?.find((p) => p.id === userId);
+    const p = perfiles?.find((p: Perfil) => p.id === userId);
     return p?.nombre ?? p?.email ?? userId;
   };
 
