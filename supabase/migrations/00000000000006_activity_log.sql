@@ -10,6 +10,8 @@ create table public.activity_log (
 
 alter table public.activity_log enable row level security;
 
+grant select on public.activity_log to authenticated;
+
 create policy "admin lee el log de auditoría"
   on public.activity_log for select
   to authenticated
