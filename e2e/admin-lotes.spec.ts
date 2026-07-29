@@ -47,7 +47,7 @@ test("un profesor edita el estado de un lote existente", async ({ page }) => {
   await page.getByRole("button", { name: "Guardar" }).click();
 
   await page.getByRole("link", { name: "Lote a editar" }).click();
-  await expect(page.getByRole("heading", { name: "Editar lote" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Lote a editar", exact: true })).toBeVisible();
 
   await page.getByLabel("Estado").selectOption("fructificacion");
   await page.getByRole("button", { name: "Guardar" }).click();
@@ -91,7 +91,7 @@ test("un estudiante que visita /admin/lotes/nuevo es redirigido a /admin/lotes",
   await expect(page).toHaveURL(/\/admin\/lotes$/);
 });
 
-test("un estudiante que visita /admin/lotes/[id] es redirigido a /admin/lotes", async ({
+test("un estudiante que visita /admin/lotes/[id] entra al detalle sin ser redirigido", async ({
   page,
 }) => {
   const profesor = await createTestUser("profesor");
@@ -121,5 +121,8 @@ test("un estudiante que visita /admin/lotes/[id] es redirigido a /admin/lotes", 
   await page.goto(
     `/e2e-login?email=${encodeURIComponent(estudiante.email)}&password=${encodeURIComponent(estudiante.password)}&next=/admin/lotes/${loteId}`
   );
-  await expect(page).toHaveURL(/\/admin\/lotes$/);
+  await expect(page).toHaveURL(new RegExp(`/admin/lotes/${loteId}$`));
+  await expect(
+    page.getByRole("heading", { name: "Lote para guard de edición", exact: true })
+  ).toBeVisible();
 });
