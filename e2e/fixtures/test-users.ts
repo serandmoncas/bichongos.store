@@ -10,6 +10,7 @@ const DB_URL =
 export type TestRole = "pendiente" | "estudiante" | "operador" | "profesor" | "admin";
 
 export interface TestUser {
+  id: string;
   email: string;
   password: string;
 }
@@ -48,5 +49,5 @@ export async function createTestUser(role: TestRole): Promise<TestUser> {
     }
   }
 
-  return { email, password };
+  return { id, email, password };
 }
