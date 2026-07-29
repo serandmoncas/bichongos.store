@@ -43,6 +43,9 @@ export default async function AdminLayout({
                 </Link>
               </>
             )}
+            <Link href="/admin/lotes" className="text-tinta/70 hover:text-tinta">
+              Lotes
+            </Link>
             <Link href="/admin/perfil" className="text-tinta/70 hover:text-tinta">
               Mi perfil
             </Link>
