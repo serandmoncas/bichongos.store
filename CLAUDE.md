@@ -66,12 +66,11 @@ Principio clave: **OAuth autentica, la autorización la controla la app** (aprob
 14. ✅ Middleware de Next.js que protege `/admin` y redirige según rol
 15. ✅ Pantalla de "cuenta pendiente de aprobación"
 
-### Épica 4 — Panel de administración 🚧 (siguiente prioritaria)
-**Antes de tocar código: decidir el rol "operador"** para el personal que va a operar el cultivo día a día (Lore y Fredy) — hoy el enum de roles no lo modela explícitamente; hay que definir si mapea al rol `estudiante` existente o si se necesita un rol nuevo, y qué debe poder ver/hacer exactamente. Es una decisión de producto (brainstorming), no inferible del código.
-16. ⏳ Layout del admin: navegación, header con usuario y rol
-17. ⏳ Gestión de usuarios (solo admin): listar, aprobar, cambiar rol, desactivar
-18. ⏳ Perfil propio: editar nombre, ver rol
-19. ⏳ Auditoría básica (`activity_log`)
+### Épica 4 — Panel de administración ✅
+16. ✅ Layout del admin: navegación, header con usuario y rol
+17. ✅ Gestión de usuarios (solo admin): listar, aprobar, cambiar rol, desactivar
+18. ✅ Perfil propio: editar nombre, ver rol
+19. ✅ Auditoría básica (`activity_log`)
 
 ### Épica 5 — Gestión del cultivo
 20. ⏳ Modelo de datos del cultivo: lotes
@@ -132,13 +131,17 @@ Ver `docs/superpowers/specs/2026-07-23-harness-ingenieria-design.md` para el dis
 **Antipatrones a evitar:** spec en el chat en vez de en archivo versionado, generar código sin especificar primero, aceptar un diff sin entenderlo línea por línea, confianza silenciosa (dar algo por bueno porque "compila"), big-bang build (cambios tan grandes que no se pueden revisar ni revertir con confianza).
 
 ## Bootstrap del primer admin en producción
-El trigger `enforce_role_estado_immutable` (migración 2) bloquea cambios al campo `role` de cualquier perfil a menos que el usuario ya tenga `role = 'admin'`. Esto es correcto por seguridad, pero implica que **no existe un path normal para crear la cuenta admin inicial** (nadie nace como admin). 
+El trigger `enforce_role_estado_immutable` (migración 2) bloquea cambios al campo `role` de cualquier perfil a menos que el usuario ya tenga `role = 'admin'`. Esto es correcto por seguridad, pero implica que **no existe un path normal para crear la cuenta admin inicial** (nadie nace como admin).
+
+Además, desde la migración de `activity_log` (Épica 4, historia 19) hay un segundo trigger `AFTER UPDATE` en `profiles`, `log_role_estado_change`, que audita cambios de rol/estado insertando en `activity_log` con `actor_id = auth.uid()`. En el SQL editor / contexto de service role no hay JWT, así que `auth.uid()` da `NULL`, y como `activity_log.actor_id` es `NOT NULL` ese insert falla y aborta el `UPDATE` completo. Por eso el bootstrap no puede desactivar solo `enforce_role_estado_immutable` por nombre — hay que desactivar todos los triggers de la sesión.
 
 Para promover el primer admin en producción, ejecutar en el SQL editor de Supabase (con permisos de service role):
 ```sql
-alter table public.profiles disable trigger enforce_role_estado_immutable;
+set session_replication_role = replica;
 update public.profiles set role = 'admin' where id = '<user-id>';
-alter table public.profiles enable trigger enforce_role_estado_immutable;
+set session_replication_role = default;
 ```
+
+Este patrón (`session_replication_role = replica`) es el mismo que usa `e2e/fixtures/test-users.ts` para su setup de usuarios de prueba vía service role — es más robusto que nombrar triggers uno por uno, porque futuros triggers no vuelven a romper este procedimiento en silencio.
 
 **Advertencia:** este procedimiento debe ejecutarse únicamente a través del SQL editor / service role de la BD, nunca expuesto en la aplicación.
