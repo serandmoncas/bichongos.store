@@ -34,7 +34,7 @@ El enum `public.registro_tipo` (`riego | humedad | temperatura | observacion`) y
 
 ---
 
-### Tarea 1: Migración — tabla `tareas_asignadas` con RLS
+### Task 1: Migración — tabla `tareas_asignadas` con RLS
 
 **Files:**
 - Create: `supabase/migrations/00000000000010_tareas_asignadas.sql`
@@ -126,7 +126,7 @@ git commit -m "cultivo: agrega la tabla tareas_asignadas con RLS (profesor/admin
 
 ---
 
-### Tarea 2: Migración — función `listar_usuarios_aprobados`
+### Task 2: Migración — función `listar_usuarios_aprobados`
 
 **Files:**
 - Create: `supabase/migrations/00000000000011_listar_usuarios_aprobados.sql`
@@ -191,7 +191,7 @@ git commit -m "cultivo: agrega listar_usuarios_aprobados para poblar el selector
 
 ---
 
-### Tarea 3: Migración — trigger de auto-completado
+### Task 3: Migración — trigger de auto-completado
 
 **Files:**
 - Create: `supabase/migrations/00000000000012_completar_tarea_asignada.sql`
@@ -270,7 +270,7 @@ git commit -m "cultivo: agrega el trigger que completa una tarea asignada al reg
 
 ---
 
-### Tarea 4: Server Action `asignarTarea` + formulario `AsignarTareaForm`
+### Task 4: Server Action `asignarTarea` + formulario `AsignarTareaForm`
 
 **Files:**
 - Create: `src/app/admin/tareas/actions.ts`
@@ -433,7 +433,7 @@ git commit -m "cultivo: agrega Server Action y formulario para asignar tareas"
 
 ---
 
-### Tarea 5: Página `/admin/tareas` + link de nav
+### Task 5: Página `/admin/tareas` + link de nav
 
 **Files:**
 - Create: `src/app/admin/tareas/page.tsx`
@@ -619,7 +619,7 @@ git commit -m "cultivo: agrega la página /admin/tareas con listado por rol y el
 
 ---
 
-### Tarea 6: Cobertura E2E (CA1-CA7)
+### Task 6: Cobertura E2E (CA1-CA7)
 
 **Files:**
 - Create: `e2e/admin-tareas.spec.ts`
