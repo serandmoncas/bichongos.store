@@ -247,19 +247,28 @@ Expected: sin errores, `00000000000012_completar_tarea_asignada.sql` aparece apl
 
 ```bash
 psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" <<'SQL'
--- crea un usuario auth mínimo y un lote para probar el trigger de punta a punta
+-- crea un usuario auth mínimo: el trigger handle_new_user (migración 1) ya
+-- crea su fila en public.profiles con role = 'pendiente' automáticamente,
+-- así que NO se debe volver a insertar esa fila (violaría la PK) — solo
+-- subirle el rol, y solo se puede hacer con
+-- session_replication_role = replica (igual que el bootstrap del primer
+-- admin documentado en CLAUDE.md y que e2e/fixtures/test-users.ts), porque
+-- el trigger enforce_role_estado_immutable (migración 2) bloquea cualquier
+-- UPDATE de role/estado fuera de una sesión admin autenticada, y en psql
+-- crudo auth.uid() es NULL.
 insert into auth.users (id, email) values ('11111111-1111-1111-1111-111111111111', 'trigger-test@bichongos.test');
-insert into public.profiles (id, email, role) values ('11111111-1111-1111-1111-111111111111', 'trigger-test@bichongos.test', 'estudiante');
+set session_replication_role = replica;
+update public.profiles set role = 'estudiante' where id = '11111111-1111-1111-1111-111111111111';
+set session_replication_role = default;
 insert into public.lotes (id, nombre, especie, created_by) values ('22222222-2222-2222-2222-222222222222', 'Lote trigger test', 'Orellana', '11111111-1111-1111-1111-111111111111');
 insert into public.tareas_asignadas (lote_id, tipo, asignado_a, asignado_por) values ('22222222-2222-2222-2222-222222222222', 'riego', '11111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111');
 insert into public.registros (lote_id, user_id, tipo, valor) values ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'riego', '200ml');
 select estado, registro_id is not null as tiene_registro from public.tareas_asignadas where lote_id = '22222222-2222-2222-2222-222222222222';
 delete from public.lotes where id = '22222222-2222-2222-2222-222222222222';
-delete from public.profiles where id = '11111111-1111-1111-1111-111111111111';
 delete from auth.users where id = '11111111-1111-1111-1111-111111111111';
 SQL
 ```
-Expected: el `select` final muestra `estado = completada` y `tiene_registro = t`. Los `delete` finales limpian los datos de prueba (el `on delete cascade` de `tareas_asignadas.lote_id` se encarga del resto al borrar el lote).
+Expected: el `select` final muestra `estado = completada` y `tiene_registro = t`. El `delete` de `auth.users` al final cae en cascada sobre `public.profiles` (migración 1: `on delete cascade`); el `delete` de `lotes` ya se llevó por cascada `tareas_asignadas` y `registros` de ese lote.
 
 - [ ] **Step 4: Commit**
 
