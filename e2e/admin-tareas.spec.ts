@@ -98,6 +98,7 @@ test("un estudiante no ve el formulario de asignar tarea", async ({ page }) => {
     `/e2e-login?email=${encodeURIComponent(estudiante.email)}&password=${encodeURIComponent(estudiante.password)}&next=/admin/tareas`
   );
 
+  await expect(page.getByRole("heading", { name: "Tareas" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Asignar tarea" })).toHaveCount(0);
 });
 
@@ -156,8 +157,34 @@ test("registrar un tipo distinto no completa la tarea asignada", async ({ page }
   await page.getByLabel("Tipo").selectOption("observacion");
   await page.getByLabel("Valor").fill("todo normal");
   await page.getByRole("button", { name: "Registrar" }).click();
+  await expect(page.locator("tbody tr", { hasText: "Observación" })).toContainText("todo normal");
 
   await page.goto("/admin/tareas");
+  await expect(page.locator("tbody tr", { hasText: "Riego" })).toContainText("Pendiente");
+});
+
+test("si otra persona registra la tarea, la tarea asignada no se completa (CA6)", async ({
+  page,
+}) => {
+  const loteId = await crearLoteDePrueba("Lote otra persona registra");
+  const profesor = await createTestUser("profesor");
+  const estudianteAsignado = await createTestUser("estudiante");
+  const otraPersona = await createTestUser("estudiante");
+  await asignarTareaDirecto(loteId, "riego", estudianteAsignado.id, profesor.id);
+
+  await page.goto(
+    `/e2e-login?email=${encodeURIComponent(otraPersona.email)}&password=${encodeURIComponent(otraPersona.password)}&next=/admin/lotes/${loteId}`
+  );
+  await page.getByLabel("Tipo").selectOption("riego");
+  await page.getByLabel("Valor").fill("otra persona registra esto");
+  await page.getByRole("button", { name: "Registrar" }).click();
+  await expect(page.locator("tbody tr", { hasText: "Riego" })).toContainText(
+    "otra persona registra esto"
+  );
+
+  await page.goto(
+    `/e2e-login?email=${encodeURIComponent(estudianteAsignado.email)}&password=${encodeURIComponent(estudianteAsignado.password)}&next=/admin/tareas`
+  );
   await expect(page.locator("tbody tr", { hasText: "Riego" })).toContainText("Pendiente");
 });
 
