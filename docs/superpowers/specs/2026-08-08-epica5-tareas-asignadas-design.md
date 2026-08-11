@@ -122,6 +122,8 @@ create policy "profesor y admin asignan tareas"
 -- registros (ver "Fuera de alcance").
 ```
 
+**Nota post-implementación:** el tercer `exists()` de este `with check` resultó estar roto — queda filtrado por la RLS de `profiles` del propio caller, que solo expone su propia fila (o todas, si es admin), así que un profesor nunca podía pasar ese chequeo al asignar a otra persona. Corregido en `supabase/migrations/00000000000013_fix_tareas_asignadas_insert_policy.sql` con una función `SECURITY DEFINER` (`es_perfil_aprobado()`), mismo patrón que `is_admin()` (migración 3).
+
 ### 2. Auto-completado al registrar
 
 Trigger `AFTER INSERT on registros`, mismo patrón `SECURITY DEFINER` que `log_profile_role_estado_change` (migración 6):

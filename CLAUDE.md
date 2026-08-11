@@ -72,12 +72,12 @@ Principio clave: **OAuth autentica, la autorización la controla la app** (aprob
 18. ✅ Perfil propio: editar nombre, ver rol
 19. ✅ Auditoría básica (`activity_log`)
 
-### Épica 5 — Gestión del cultivo
-20. ⏳ Modelo de datos del cultivo: lotes
-21. ⏳ CRUD de lotes (profesor/admin crean y editan; estudiantes registran)
-22. ⏳ Registro de tareas diarias: riego, humedad, temperatura, observaciones, fotos
-23. ⏳ Bitácora por lote: historial cronológico
-24. ⏳ Vistas por rol: estudiantes ven sus tareas; profesores supervisan y asignan
+### Épica 5 — Gestión del cultivo ✅
+20. ✅ Modelo de datos del cultivo: lotes
+21. ✅ CRUD de lotes (profesor/admin crean y editan; estudiantes registran)
+22. ✅ Registro de tareas diarias: riego, humedad, temperatura, observaciones, fotos
+23. ✅ Bitácora por lote: historial cronológico
+24. ✅ Vistas por rol: estudiantes ven sus tareas; profesores supervisan y asignan
 
 ### Épica 6 — Capacitación (post-MVP)
 Reutilizar contenido existente: los SOPs y fichas de especies del repo `Bichongos` (I+D de Sergio Monsalve, `github.com/serandmoncas/Bichongos`) son candidatos directos en vez de escribir contenido de cero.
