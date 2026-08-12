@@ -49,6 +49,9 @@ export default async function AdminLayout({
             <Link href="/admin/tareas" className="text-tinta/70 hover:text-tinta">
               Tareas
             </Link>
+            <Link href="/admin/contenidos" className="text-tinta/70 hover:text-tinta">
+              Contenidos
+            </Link>
             <Link href="/admin/perfil" className="text-tinta/70 hover:text-tinta">
               Mi perfil
             </Link>
