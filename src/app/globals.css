@@ -15,3 +15,73 @@ body {
   background: var(--color-crema);
   color: var(--color-tinta);
 }
+
+.markdown-body h1 {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body h2 {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-body h3 {
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-body p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.markdown-body li {
+  margin-bottom: 0.25rem;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid color-mix(in oklch, var(--color-tinta) 15%, transparent);
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.markdown-body code {
+  font-family: var(--font-mono);
+  background: color-mix(in oklch, var(--color-tinta) 8%, transparent);
+  padding: 0.1rem 0.3rem;
+  font-size: 0.875em;
+}
+
+.markdown-body pre {
+  background: color-mix(in oklch, var(--color-tinta) 8%, transparent);
+  padding: 1rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+}
