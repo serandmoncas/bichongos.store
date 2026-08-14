@@ -81,7 +81,7 @@ Principio clave: **OAuth autentica, la autorización la controla la app** (aprob
 
 ### Épica 6 — Capacitación (post-MVP)
 Reutilizar contenido existente: los SOPs y fichas de especies del repo `Bichongos` (I+D de Sergio Monsalve, `github.com/serandmoncas/Bichongos`) son candidatos directos en vez de escribir contenido de cero.
-25. ⏳ Módulo de contenidos (suben profesores)
+25. ✅ Módulo de contenidos (suben profesores)
 26. ⏳ Seguimiento de progreso por estudiante
 27. ⏳ Checklist de competencias antes de acceso a operaciones reales
 
