@@ -4,13 +4,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { createClient } from "@/lib/supabase/server";
 import { EliminarContenidoButton } from "./eliminar-contenido-button";
+import { CATEGORIA_LABELS } from "../categorias";
 
-const ROLES_QUE_EDITAN = ["profesor", "admin"];
-
-const CATEGORIA_LABELS: Record<string, string> = {
-  ficha_especie: "Ficha de especie",
-  sop: "SOP",
-};
+const ROLES_QUE_GESTIONAN_CONTENIDOS = ["profesor", "admin"];
 
 export default async function ContenidoDetallePage({
   params,
@@ -31,7 +27,7 @@ export default async function ContenidoDetallePage({
     .eq("id", user.sub)
     .single();
 
-  const canEdit = ROLES_QUE_EDITAN.includes(profile?.role ?? "");
+  const canEdit = ROLES_QUE_GESTIONAN_CONTENIDOS.includes(profile?.role ?? "");
 
   const { data: contenido } = await supabase
     .from("contenidos")

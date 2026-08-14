@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ContenidoForm } from "../../contenido-form";
 import { updateContenido } from "../../actions";
 
-const ROLES_QUE_EDITAN = ["profesor", "admin"];
+const ROLES_QUE_GESTIONAN_CONTENIDOS = ["profesor", "admin"];
 
 export default async function EditarContenidoPage({
   params,
@@ -24,7 +24,7 @@ export default async function EditarContenidoPage({
     .eq("id", user.sub)
     .single();
 
-  if (!profile || !ROLES_QUE_EDITAN.includes(profile.role)) {
+  if (!profile || !ROLES_QUE_GESTIONAN_CONTENIDOS.includes(profile.role)) {
     redirect(`/admin/contenidos/${id}`);
   }
 

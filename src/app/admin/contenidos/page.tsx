@@ -1,13 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { CATEGORIA_LABELS } from "./categorias";
 
-const ROLES_QUE_EDITAN = ["profesor", "admin"];
-
-const CATEGORIA_LABELS: Record<string, string> = {
-  ficha_especie: "Ficha de especie",
-  sop: "SOP",
-};
+const ROLES_QUE_GESTIONAN_CONTENIDOS = ["profesor", "admin"];
 
 export default async function ContenidosPage({
   searchParams,
@@ -28,7 +24,7 @@ export default async function ContenidosPage({
     .eq("id", user.sub)
     .single();
 
-  const canEdit = ROLES_QUE_EDITAN.includes(profile?.role ?? "");
+  const canEdit = ROLES_QUE_GESTIONAN_CONTENIDOS.includes(profile?.role ?? "");
 
   const COLUMNAS = "id, titulo, categoria, nivel, created_at";
   const categoriaValida =
