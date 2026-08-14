@@ -41,13 +41,28 @@ export default async function ContenidosPage({
         .select(COLUMNAS)
         .order("created_at", { ascending: false });
 
+  const { data: lecturas } = await supabase
+    .from("lecturas")
+    .select("contenido_id")
+    .eq("user_id", user.sub);
+  const leidos = new Set((lecturas ?? []).map((l) => l.contenido_id));
+
+  const { count: totalContenidos } = await supabase
+    .from("contenidos")
+    .select("id", { count: "exact", head: true });
+
   const filtroClase = (activo: boolean) =>
     activo ? "text-musgo-oscuro underline" : "text-tinta/60";
 
   return (
     <main className="px-6 py-12">
       <div className="flex items-center justify-between">
-        <h1 className="font-serif text-2xl font-semibold">Contenidos</h1>
+        <div>
+          <h1 className="font-serif text-2xl font-semibold">Contenidos</h1>
+          <p className="mt-1 font-mono text-sm text-tinta/60">
+            {leidos.size} de {totalContenidos ?? 0} leídos
+          </p>
+        </div>
         {canEdit && (
           <Link
             href="/admin/contenidos/nuevo"
@@ -77,6 +92,7 @@ export default async function ContenidosPage({
       <table className="mt-8 w-full font-mono text-sm">
         <thead>
           <tr className="border-b border-tinta/10 text-left text-tinta/60">
+            <th className="py-2 pr-4 w-8" aria-label="Leído"></th>
             <th className="py-2 pr-4">Título</th>
             <th className="py-2 pr-4">Categoría</th>
             <th className="py-2 pr-4">Nivel</th>
@@ -86,6 +102,13 @@ export default async function ContenidosPage({
         <tbody>
           {(contenidos ?? []).map((contenido) => (
             <tr key={contenido.id} className="border-b border-tinta/5">
+              <td className="py-2 pr-4 text-musgo-oscuro">
+                {leidos.has(contenido.id) ? (
+                  <span aria-label="Leído" title="Leído">✓</span>
+                ) : (
+                  <span aria-hidden="true"> </span>
+                )}
+              </td>
               <td className="py-2 pr-4">
                 <Link
                   href={`/admin/contenidos/${contenido.id}`}

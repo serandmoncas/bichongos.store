@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { createClient } from "@/lib/supabase/server";
 import { EliminarContenidoButton } from "./eliminar-contenido-button";
+import { LecturaToggle } from "./lectura-toggle";
 import { CATEGORIA_LABELS } from "../categorias";
 
 const ROLES_QUE_GESTIONAN_CONTENIDOS = ["profesor", "admin"];
@@ -39,6 +40,13 @@ export default async function ContenidoDetallePage({
     notFound();
   }
 
+  const { data: lectura } = await supabase
+    .from("lecturas")
+    .select("id")
+    .eq("contenido_id", contenido.id)
+    .eq("user_id", user.sub)
+    .maybeSingle();
+
   return (
     <main className="px-6 py-12">
       <div className="flex items-center justify-between">
@@ -49,17 +57,20 @@ export default async function ContenidoDetallePage({
             {contenido.nivel && ` · ${contenido.nivel}`}
           </p>
         </div>
-        {canEdit && (
-          <div className="flex gap-4">
-            <Link
-              href={`/admin/contenidos/${contenido.id}/editar`}
-              className="font-mono text-sm uppercase tracking-wide text-musgo-oscuro underline"
-            >
-              Editar
-            </Link>
-            <EliminarContenidoButton id={contenido.id} />
-          </div>
-        )}
+        <div className="flex items-start gap-4">
+          <LecturaToggle contenidoId={contenido.id} leido={Boolean(lectura)} />
+          {canEdit && (
+            <>
+              <Link
+                href={`/admin/contenidos/${contenido.id}/editar`}
+                className="font-mono text-sm uppercase tracking-wide text-musgo-oscuro underline"
+              >
+                Editar
+              </Link>
+              <EliminarContenidoButton id={contenido.id} />
+            </>
+          )}
+        </div>
       </div>
       <article className="markdown-body mt-8 max-w-2xl">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{contenido.cuerpo}</ReactMarkdown>
