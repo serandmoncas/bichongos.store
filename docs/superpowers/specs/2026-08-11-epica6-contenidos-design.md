@@ -138,7 +138,7 @@ Notas de diseño:
 - `src/app/admin/contenidos/[id]/page.tsx` — detalle: `cuerpo` renderizado con `react-markdown`; si `canEdit`, botones "Editar" (link) y "Eliminar" (form con confirmación simple).
 - `src/app/admin/contenidos/[id]/editar/page.tsx` — mismo formulario que crear, precargado.
 - `src/app/admin/contenidos/contenido-form.tsx` — client component compartido entre crear/editar, mismo patrón que `LoteForm`.
-- Nueva dependencia: `react-markdown` (renderiza Markdown a JSX de forma segura, sin `dangerouslySetInnerHTML`).
+- Nueva dependencia: `react-markdown` (renderiza Markdown a JSX de forma segura, sin `dangerouslySetInnerHTML`), más el plugin `remark-gfm` — el Markdown base (CommonMark) no soporta tablas, y el contenido real (fichas de especie, SOPs) es denso en tablas, así que `remark-gfm` es necesario para que `react-markdown` las renderice como `<table>`.
 - Nav: link "Contenidos" en `src/app/admin/layout.tsx`, visible a cualquier rol aprobado, junto a "Lotes"/"Tareas".
 
 ## Verificación
