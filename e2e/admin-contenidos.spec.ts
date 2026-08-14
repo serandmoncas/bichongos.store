@@ -109,13 +109,20 @@ test("un estudiante no puede escribir contenido directamente (INSERT/UPDATE/DELE
       `set local "request.jwt.claims" = '${JSON.stringify({ sub: estudiante.id, role: "authenticated" })}'`
     );
 
-    // INSERT: una policy denegada en INSERT lanza (WITH CHECK falla).
+    // INSERT: una policy denegada en INSERT lanza (WITH CHECK falla). Un
+    // error dentro de una transacción la deja abortada — cualquier
+    // sentencia posterior fallaría con "current transaction is aborted"
+    // aunque sea válida — así que el intento va envuelto en un savepoint
+    // y se vuelve a él tras el error, para poder seguir usando la misma
+    // transacción (y el mismo role/claims ya seteados) para UPDATE/DELETE.
+    await db.query("savepoint before_insert");
     await expect(
       db.query(
         "insert into public.contenidos (titulo, categoria, cuerpo, created_by) values ($1, $2, $3, $4)",
         [tituloUnico("Intento estudiante"), "sop", "cuerpo", estudiante.id]
       )
     ).rejects.toThrow();
+    await db.query("rollback to savepoint before_insert");
 
     // UPDATE/DELETE denegados por RLS NO lanzan: Postgres simplemente no
     // encuentra filas visibles para esa policy y devuelve 0 filas
