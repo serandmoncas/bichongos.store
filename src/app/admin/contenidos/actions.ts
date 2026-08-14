@@ -42,7 +42,7 @@ export async function updateContenido(id: string, values: ContenidoFormValues) {
     throw new Error("No autenticado");
   }
 
-  const { error } = await supabase
+  const { data: rows, error } = await supabase
     .from("contenidos")
     .update({
       titulo: values.titulo,
@@ -52,9 +52,13 @@ export async function updateContenido(id: string, values: ContenidoFormValues) {
       updated_by: userId,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
   if (error) {
     throw new Error(`No se pudo actualizar el contenido: ${error.message}`);
+  }
+  if (!rows?.length) {
+    throw new Error("No se pudo actualizar el contenido: sin permisos o ya no existe.");
   }
 
   revalidatePath("/admin/contenidos");
@@ -64,9 +68,16 @@ export async function updateContenido(id: string, values: ContenidoFormValues) {
 export async function deleteContenido(id: string) {
   const supabase = await createClient();
 
-  const { error } = await supabase.from("contenidos").delete().eq("id", id);
+  const { data: rows, error } = await supabase
+    .from("contenidos")
+    .delete()
+    .eq("id", id)
+    .select("id");
   if (error) {
     throw new Error(`No se pudo eliminar el contenido: ${error.message}`);
+  }
+  if (!rows?.length) {
+    throw new Error("No se pudo eliminar el contenido: sin permisos o ya no existe.");
   }
 
   revalidatePath("/admin/contenidos");
