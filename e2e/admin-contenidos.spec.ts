@@ -1,9 +1,14 @@
+import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { Client } from "pg";
 import { createTestUser } from "./fixtures/test-users";
 
 const DB_URL =
   process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+
+function tituloUnico(base: string): string {
+  return `${base} ${randomUUID().slice(0, 8)}`;
+}
 
 async function crearContenidoDePrueba(
   titulo: string,
@@ -28,11 +33,12 @@ test("un profesor crea un contenido y el detalle lo renderiza como markdown, no 
   page,
 }) => {
   const profesor = await createTestUser("profesor");
+  const titulo = tituloUnico("Ficha de prueba");
 
   await page.goto(
     `/e2e-login?email=${encodeURIComponent(profesor.email)}&password=${encodeURIComponent(profesor.password)}&next=/admin/contenidos/nuevo`
   );
-  await page.getByLabel("Título").fill("Ficha de prueba");
+  await page.getByLabel("Título").fill(titulo);
   await page.getByLabel("Categoría").selectOption("ficha_especie");
   await page.getByLabel("Nivel").fill("N1");
   await page
@@ -41,7 +47,7 @@ test("un profesor crea un contenido y el detalle lo renderiza como markdown, no 
   await page.getByRole("button", { name: "Guardar" }).click();
 
   await expect(page).toHaveURL(/\/admin\/contenidos$/);
-  await page.getByRole("link", { name: "Ficha de prueba" }).click();
+  await page.getByRole("link", { name: titulo }).click();
 
   await expect(page.getByRole("heading", { name: "Encabezado" })).toBeVisible();
   const celda = page.locator("table td", { hasText: "2" });
@@ -52,12 +58,8 @@ test("un estudiante ve el contenido pero no los controles de crear/editar/elimin
   page,
 }) => {
   const profesor = await createTestUser("profesor");
-  const contenidoId = await crearContenidoDePrueba(
-    "Contenido solo lectura",
-    "sop",
-    "N2",
-    profesor.id
-  );
+  const titulo = tituloUnico("Contenido solo lectura");
+  const contenidoId = await crearContenidoDePrueba(titulo, "sop", "N2", profesor.id);
   const estudiante = await createTestUser("estudiante");
 
   await page.goto(
@@ -75,15 +77,27 @@ test("un estudiante ve el contenido pero no los controles de crear/editar/elimin
   // redirección a /admin/contenidos ya ocurrió), igual que hace el test del
   // "nivel" más abajo.
   await expect(page.getByRole("heading", { name: "Contenidos" })).toBeVisible();
+  // CA3 dice "ve la lista completa": no basta con probar la ausencia de
+  // controles de gestión, hay que probar que el contenido sembrado
+  // realmente aparece listado (la lectura del detalle más abajo ya prueba
+  // el SELECT, pero no prueba que la lista lo incluya).
+  await expect(page.getByRole("link", { name: titulo })).toBeVisible();
   await expect(page.getByRole("link", { name: "Nuevo contenido" })).toHaveCount(0);
 
   await page.goto(`/admin/contenidos/${contenidoId}`);
-  await expect(page.getByRole("heading", { name: "Contenido solo lectura" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: titulo })).toBeVisible();
   await expect(page.getByRole("link", { name: "Editar" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Eliminar" })).toHaveCount(0);
 });
 
-test("un estudiante no puede crear contenido directamente, RLS lo rechaza", async () => {
+test("un estudiante no puede escribir contenido directamente (INSERT/UPDATE/DELETE), RLS lo rechaza", async () => {
+  const profesor = await createTestUser("profesor");
+  const contenidoId = await crearContenidoDePrueba(
+    tituloUnico("Contenido protegido"),
+    "sop",
+    null,
+    profesor.id
+  );
   const estudiante = await createTestUser("estudiante");
 
   const db = new Client({ connectionString: DB_URL });
@@ -94,25 +108,43 @@ test("un estudiante no puede crear contenido directamente, RLS lo rechaza", asyn
     await db.query(
       `set local "request.jwt.claims" = '${JSON.stringify({ sub: estudiante.id, role: "authenticated" })}'`
     );
+
+    // INSERT: una policy denegada en INSERT lanza (WITH CHECK falla).
     await expect(
       db.query(
         "insert into public.contenidos (titulo, categoria, cuerpo, created_by) values ($1, $2, $3, $4)",
-        ["Intento estudiante", "sop", "cuerpo", estudiante.id]
+        [tituloUnico("Intento estudiante"), "sop", "cuerpo", estudiante.id]
       )
     ).rejects.toThrow();
+
+    // UPDATE/DELETE denegados por RLS NO lanzan: Postgres simplemente no
+    // encuentra filas visibles para esa policy y devuelve 0 filas
+    // afectadas. Si alguien ampliara la policy de UPDATE o DELETE a
+    // estudiante, este test es el único que lo detectaría.
+    const upd = await db.query(
+      "update public.contenidos set titulo = 'x', updated_by = $1 where id = $2",
+      [estudiante.id, contenidoId]
+    );
+    expect(upd.rowCount).toBe(0);
+
+    const del = await db.query("delete from public.contenidos where id = $1", [contenidoId]);
+    expect(del.rowCount).toBe(0);
+
     await db.query("rollback");
   } finally {
     await db.end();
   }
 });
 
-test("un profesor distinto puede editar el contenido de otro, y queda registrado quién lo editó", async ({
+test("un profesor distinto puede editar el contenido de otro, y queda registrado quién lo editó y cuándo", async ({
   page,
 }) => {
   const profesorA = await createTestUser("profesor");
   const profesorB = await createTestUser("profesor");
+  const tituloOriginal = tituloUnico("Contenido editado por otro");
+  const tituloEditado = tituloUnico("Título editado por B");
   const contenidoId = await crearContenidoDePrueba(
-    "Contenido editado por otro",
+    tituloOriginal,
     "ficha_especie",
     "N1",
     profesorA.id
@@ -121,18 +153,25 @@ test("un profesor distinto puede editar el contenido de otro, y queda registrado
   await page.goto(
     `/e2e-login?email=${encodeURIComponent(profesorB.email)}&password=${encodeURIComponent(profesorB.password)}&next=/admin/contenidos/${contenidoId}/editar`
   );
-  await page.getByLabel("Título").fill("Título editado por B");
+  await page.getByLabel("Título").fill(tituloEditado);
   await page.getByRole("button", { name: "Guardar" }).click();
   await expect(page).toHaveURL(/\/admin\/contenidos$/);
-  await expect(page.getByRole("link", { name: "Título editado por B" })).toBeVisible();
+  await expect(page.getByRole("link", { name: tituloEditado })).toBeVisible();
 
   const db = new Client({ connectionString: DB_URL });
   await db.connect();
   try {
-    const result = await db.query("select updated_by from public.contenidos where id = $1", [
-      contenidoId,
-    ]);
+    const result = await db.query(
+      "select updated_by, created_at, updated_at from public.contenidos where id = $1",
+      [contenidoId]
+    );
     expect(result.rows[0].updated_by).toBe(profesorB.id);
+    // CA6 es "queda registrado quién hizo el último cambio Y CUÁNDO": no
+    // basta con updated_by, updated_at tiene que haber avanzado más allá
+    // del created_at original.
+    expect(new Date(result.rows[0].updated_at).getTime()).toBeGreaterThan(
+      new Date(result.rows[0].created_at).getTime()
+    );
   } finally {
     await db.end();
   }
@@ -140,12 +179,8 @@ test("un profesor distinto puede editar el contenido de otro, y queda registrado
 
 test("un profesor puede eliminar un contenido", async ({ page }) => {
   const profesor = await createTestUser("profesor");
-  const contenidoId = await crearContenidoDePrueba(
-    "Contenido a eliminar",
-    "sop",
-    null,
-    profesor.id
-  );
+  const titulo = tituloUnico("Contenido a eliminar");
+  const contenidoId = await crearContenidoDePrueba(titulo, "sop", null, profesor.id);
 
   page.on("dialog", (dialog) => dialog.accept());
 
@@ -154,24 +189,55 @@ test("un profesor puede eliminar un contenido", async ({ page }) => {
   );
   await page.getByRole("button", { name: "Eliminar" }).click();
   await expect(page).toHaveURL(/\/admin\/contenidos$/);
-  await expect(page.getByRole("link", { name: "Contenido a eliminar" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: titulo })).toHaveCount(0);
 });
 
 test("el nivel es metadata visible pero no restringe el acceso de un estudiante", async ({
   page,
 }) => {
   const profesor = await createTestUser("profesor");
-  const contenidoId = await crearContenidoDePrueba(
-    "Contenido nivel avanzado",
-    "sop",
-    "N4",
-    profesor.id
-  );
+  const titulo = tituloUnico("Contenido nivel avanzado");
+  const contenidoId = await crearContenidoDePrueba(titulo, "sop", "N4", profesor.id);
   const estudiante = await createTestUser("estudiante");
 
   await page.goto(
     `/e2e-login?email=${encodeURIComponent(estudiante.email)}&password=${encodeURIComponent(estudiante.password)}&next=/admin/contenidos/${contenidoId}`
   );
-  await expect(page.getByRole("heading", { name: "Contenido nivel avanzado" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: titulo })).toBeVisible();
   await expect(page.getByText("N4")).toBeVisible();
+});
+
+test("un estudiante que visita /admin/contenidos/nuevo es redirigido a /admin/contenidos", async ({
+  page,
+}) => {
+  const estudiante = await createTestUser("estudiante");
+
+  await page.goto(
+    `/e2e-login?email=${encodeURIComponent(estudiante.email)}&password=${encodeURIComponent(estudiante.password)}&next=/admin/contenidos/nuevo`
+  );
+  await expect(page).toHaveURL(/\/admin\/contenidos$/);
+});
+
+test("un estudiante que visita /admin/contenidos/[id]/editar es redirigido al detalle", async ({
+  page,
+}) => {
+  const profesor = await createTestUser("profesor");
+  const contenidoId = await crearContenidoDePrueba(
+    tituloUnico("Contenido con guard de edición"),
+    "sop",
+    null,
+    profesor.id
+  );
+  const estudiante = await createTestUser("estudiante");
+
+  await page.goto(
+    `/e2e-login?email=${encodeURIComponent(estudiante.email)}&password=${encodeURIComponent(estudiante.password)}&next=/admin/contenidos`
+  );
+  // Mismo motivo que en el test de "solo lectura" más arriba: la primera
+  // aserción tras /e2e-login tiene que ser positiva para garantizar que la
+  // cookie de sesión ya existe antes del próximo page.goto().
+  await expect(page.getByRole("heading", { name: "Contenidos" })).toBeVisible();
+
+  await page.goto(`/admin/contenidos/${contenidoId}/editar`);
+  await expect(page).toHaveURL(new RegExp(`/admin/contenidos/${contenidoId}$`));
 });
