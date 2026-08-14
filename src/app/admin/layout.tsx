@@ -43,6 +43,11 @@ export default async function AdminLayout({
                 </Link>
               </>
             )}
+            {(profile.role === "profesor" || profile.role === "admin") && (
+              <Link href="/admin/progreso" className="text-tinta/70 hover:text-tinta">
+                Progreso
+              </Link>
+            )}
             <Link href="/admin/lotes" className="text-tinta/70 hover:text-tinta">
               Lotes
             </Link>
