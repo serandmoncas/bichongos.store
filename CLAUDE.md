@@ -79,11 +79,13 @@ Principio clave: **OAuth autentica, la autorización la controla la app** (aprob
 23. ✅ Bitácora por lote: historial cronológico
 24. ✅ Vistas por rol: estudiantes ven sus tareas; profesores supervisan y asignan
 
-### Épica 6 — Capacitación (post-MVP)
-Reutilizar contenido existente: los SOPs y fichas de especies del repo `Bichongos` (I+D de Sergio Monsalve, `github.com/serandmoncas/Bichongos`) son candidatos directos en vez de escribir contenido de cero.
+### Épica 6 — Capacitación (post-MVP) ✅
+Reutilizar contenido existente: los SOPs y fichas de especies del repo `Bichongos` (I+D de Sergio Monsalve, `github.com/serandmoncas/Bichongos`) son candidatos directos en vez de escribir contenido de cero. Se cargaron 21 documentos reales de ese repo a producción el 2026-08-14.
 25. ✅ Módulo de contenidos (suben profesores)
-26. ⏳ Seguimiento de progreso por estudiante
-27. ⏳ Checklist de competencias antes de acceso a operaciones reales
+26. ✅ Seguimiento de progreso por estudiante
+27. ✅ Checklist de competencias antes de acceso a operaciones reales
+
+**La historia 27 cambió una regla de permisos, no solo agregó una pantalla.** Hasta la migración 19, cualquier rol aprobado podía escribir la bitácora de un lote. Ahora un `estudiante` necesita al menos una competencia marcada `habilita_operar` validada por un profesor; `operador`, `profesor` y `admin` siguen sin restricción. La regla vive en la función `public.puede_registrar()` (`SECURITY DEFINER`), que es la única fuente de verdad: tanto la policy de INSERT de `registros` como la UI la consultan. El próximo estudiante que un admin apruebe entra sin poder registrar hasta que alguien lo valide — eso es intencional, y Juan y Daniela deberían saberlo antes de que pase.
 
 ### Épica 7 — IoT / Telemetría (post-MVP)
 Solo tiene sentido cuando Juan/Daniela tengan su propia cápsula física funcionando.
