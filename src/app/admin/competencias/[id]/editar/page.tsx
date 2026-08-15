@@ -50,6 +50,7 @@ export default async function EditarCompetenciaPage({
           habilita_operar: competencia.habilita_operar,
         }}
         onSubmit={updateCompetenciaBound}
+        mode="edit"
       />
     </main>
   );

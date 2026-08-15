@@ -7,9 +7,11 @@ import type { CompetenciaFormValues } from "./actions";
 export function CompetenciaForm({
   initialValues,
   onSubmit,
+  mode = "create",
 }: {
   initialValues: CompetenciaFormValues;
   onSubmit: (values: CompetenciaFormValues) => Promise<void>;
+  mode?: "create" | "edit";
 }) {
   const [values, setValues] = useState(initialValues);
   const [isPending, startTransition] = useTransition();
@@ -25,8 +27,12 @@ export function CompetenciaForm({
         startTransition(async () => {
           try {
             await onSubmit(values);
-            setValues(initialValues);
-            router.refresh();
+            if (mode === "edit") {
+              router.push("/admin/competencias");
+            } else {
+              setValues(initialValues);
+              router.refresh();
+            }
           } catch (err) {
             setError(err instanceof Error ? err.message : "No se pudo guardar.");
           }
