@@ -87,6 +87,8 @@ Reutilizar contenido existente: los SOPs y fichas de especies del repo `Bichongo
 
 **La historia 27 cambió una regla de permisos, no solo agregó una pantalla.** Hasta la migración 19, cualquier rol aprobado podía escribir la bitácora de un lote. Ahora un `estudiante` necesita al menos una competencia marcada `habilita_operar` validada por un profesor; `operador`, `profesor` y `admin` siguen sin restricción. La regla vive en la función `public.puede_registrar()` (`SECURITY DEFINER`), que es la única fuente de verdad: tanto la policy de INSERT de `registros` como la UI la consultan. El próximo estudiante que un admin apruebe entra sin poder registrar hasta que alguien lo valide — eso es intencional, y Juan y Daniela deberían saberlo antes de que pase.
 
+**Al aplicar la migración 19 (2026-08-15) quedaron dos estudiantes bloqueados**, no cero como decía el diseño: `smonsalve@gmail.com` y `juan@managerjb.com`. Ninguno había escrito en la bitácora, así que se aplicó igual. Siguen sin poder registrar hasta que un profesor les valide una competencia `habilita_operar`.
+
 ### Épica 7 — IoT / Telemetría (post-MVP)
 Solo tiene sentido cuando Juan/Daniela tengan su propia cápsula física funcionando.
 28. ⏳ Endpoint de telemetría para ESP32 (API key por dispositivo)
@@ -127,6 +129,8 @@ Ver `docs/superpowers/specs/2026-07-23-harness-ingenieria-design.md` para el dis
 - [ ] Fallos, si los hubo durante el desarrollo, reportados con su salida (nunca silenciados).
 - [ ] Decisiones y *gotchas* no obvios registrados en memoria persistente.
 - [ ] La spec actualizada si algo cambió durante la implementación respecto a lo planeado.
+
+**El estado de producción es dato vivo, no dato de diseño.** Los conteos de usuarios, roles y filas existentes que aparecen en una spec sirven para dimensionar el riesgo mientras se diseña; caducan al escribirse. Toda migración que **quite** un permiso vuelve a consultar el estado real de producción justo antes de correr, y la decisión de aplicarla se toma con ese número — no con el que dice el documento. Si difieren, se corrige la spec dejando registrado el error. Precedente: la migración 19 de la historia 27 se diseñó creyendo que producción no tenía estudiantes y bloqueó a dos (ver `docs/superpowers/specs/2026-08-14-epica6-competencias-design.md`).
 
 **Regla de honestidad:** "hecho y verificado" se afirma solo cuando de verdad se verificó. Un test que falla se reporta con su salida; no hay estados intermedios que "parecen" funcionar.
 
