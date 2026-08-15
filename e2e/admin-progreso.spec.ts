@@ -1,14 +1,10 @@
-import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { Client } from "pg";
 import { createTestUser } from "./fixtures/test-users";
+import { nombreUnico } from "./fixtures/nombres";
 
 const DB_URL =
   process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
-
-function tituloUnico(base: string): string {
-  return `${base} ${randomUUID().slice(0, 8)}`;
-}
 
 async function crearContenidoDePrueba(titulo: string, creadoPorId: string): Promise<string> {
   const db = new Client({ connectionString: DB_URL });
@@ -28,7 +24,7 @@ test("un estudiante marca y desmarca un contenido, y su avance se refleja en la 
   page,
 }) => {
   const profesor = await createTestUser("profesor");
-  const titulo = tituloUnico("Contenido para marcar");
+  const titulo = nombreUnico("Contenido para marcar");
   const contenidoId = await crearContenidoDePrueba(titulo, profesor.id);
   const estudiante = await createTestUser("estudiante");
 
@@ -61,7 +57,7 @@ test("un estudiante marca y desmarca un contenido, y su avance se refleja en la 
 
 test("un profesor ve en /admin/progreso lo que marcó el estudiante", async ({ page }) => {
   const profesor = await createTestUser("profesor");
-  const titulo = tituloUnico("Contenido supervisado");
+  const titulo = nombreUnico("Contenido supervisado");
   const contenidoId = await crearContenidoDePrueba(titulo, profesor.id);
   const estudiante = await createTestUser("estudiante");
 
@@ -101,7 +97,7 @@ test("un estudiante no ve el link Progreso y es redirigido si entra directo", as
 
 test("un estudiante no puede marcar una lectura a nombre de otro, RLS lo rechaza", async () => {
   const profesor = await createTestUser("profesor");
-  const contenidoId = await crearContenidoDePrueba(tituloUnico("Contenido RLS"), profesor.id);
+  const contenidoId = await crearContenidoDePrueba(nombreUnico("Contenido RLS"), profesor.id);
   const estudianteA = await createTestUser("estudiante");
   const estudianteB = await createTestUser("estudiante");
 
@@ -127,7 +123,7 @@ test("un estudiante no puede marcar una lectura a nombre de otro, RLS lo rechaza
 
 test("un profesor no puede borrar la lectura de otra persona (afecta cero filas)", async () => {
   const profesor = await createTestUser("profesor");
-  const contenidoId = await crearContenidoDePrueba(tituloUnico("Contenido CA6"), profesor.id);
+  const contenidoId = await crearContenidoDePrueba(nombreUnico("Contenido CA6"), profesor.id);
   const estudiante = await createTestUser("estudiante");
 
   const db = new Client({ connectionString: DB_URL });

@@ -1,14 +1,10 @@
-import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { Client } from "pg";
 import { createTestUser } from "./fixtures/test-users";
+import { nombreUnico } from "./fixtures/nombres";
 
 const DB_URL =
   process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
-
-function nombreUnico(base: string): string {
-  return `${base} ${randomUUID().slice(0, 8)}`;
-}
 
 async function crearLoteDePrueba(nombre: string, creadoPorId: string): Promise<string> {
   const db = new Client({ connectionString: DB_URL });

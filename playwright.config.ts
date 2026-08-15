@@ -6,6 +6,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: "list",
+  // Borra los usuarios de prueba y sus datos al terminar. Sin esto la base
+  // local —que sobrevive entre corridas— acumula usuarios sin límite y los
+  // selectores de personas se vuelven tan pesados que los tests fallan por
+  // timeout. Ver e2e/fixtures/teardown.ts.
+  globalTeardown: "./e2e/fixtures/teardown.ts",
   use: {
     baseURL: "http://127.0.0.1:3000",
     trace: "on-first-retry",

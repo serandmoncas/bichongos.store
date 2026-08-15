@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { Client } from "pg";
 import { randomUUID } from "node:crypto";
 import { createTestUser } from "./fixtures/test-users";
+import { nombreUnico } from "./fixtures/nombres";
 
 const DB_URL =
   process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
@@ -71,7 +72,17 @@ async function asignarTareaDirecto(
 test("un profesor asigna una tarea y el estudiante la ve pendiente en /admin/tareas", async ({
   page,
 }) => {
-  await crearLoteDePrueba("Lote asignación básica");
+  const nombreLote = nombreUnico("Lote asignación básica");
+  await crearLoteDePrueba(nombreLote);
+  // Este lote no se usa: existe solo para que el select de Lote tenga una
+  // opción con la palabra "persona". Los formularios asocian etiqueta y
+  // control con htmlFor, así que el nombre accesible del select de Lote es
+  // exactamente "Lote" y getByLabel("Persona") de abajo resuelve a un solo
+  // elemento. Si alguien vuelve a envolver el control en el <label>, el
+  // texto de las <option> entra en el nombre accesible y esa línea falla con
+  // "strict mode violation" — que es justo lo que este lote existe para
+  // detectar.
+  await crearLoteDePrueba(nombreUnico("Lote con persona en el nombre"));
   const profesor = await createTestUser("profesor");
   const estudiante = await createTestUser("estudiante");
 
@@ -80,7 +91,7 @@ test("un profesor asigna una tarea y el estudiante la ve pendiente en /admin/tar
   );
   await expect(page.getByRole("heading", { name: "Asignar tarea" })).toBeVisible();
 
-  await page.getByLabel("Lote").selectOption({ label: "Lote asignación básica" });
+  await page.getByLabel("Lote").selectOption({ label: nombreLote });
   await page.getByLabel("Persona").selectOption({ label: estudiante.email });
   await page.getByLabel("Tipo").selectOption("riego");
   await page.getByRole("button", { name: "Asignar" }).click();
@@ -89,7 +100,7 @@ test("un profesor asigna una tarea y el estudiante la ve pendiente en /admin/tar
   // (CA4), no solo las de este test — bajo ejecución en paralelo puede
   // haber otras filas "Riego" de otros tests corriendo al mismo tiempo.
   // Se acota primero por el nombre del lote, único por test.
-  const filaProfesor = page.locator("tbody tr").filter({ hasText: "Lote asignación básica" });
+  const filaProfesor = page.locator("tbody tr").filter({ hasText: nombreLote });
   await expect(filaProfesor).toContainText("Riego");
   await expect(filaProfesor).toContainText("Pendiente");
 
@@ -106,7 +117,8 @@ test("un profesor asigna una tarea y el estudiante la ve pendiente en /admin/tar
   // probar la diferencia de verdad, un SEGUNDO profesor asigna una tarea
   // (vía SQL directo) a un tercer usuario, y confirmamos que el PRIMER
   // profesor la ve igual en su propio /admin/tareas.
-  const otroLoteId = await crearLoteDePrueba("Lote asignado por otro profesor");
+  const nombreOtroLote = nombreUnico("Lote asignado por otro profesor");
+  const otroLoteId = await crearLoteDePrueba(nombreOtroLote);
   const otroProfesor = await createTestUser("profesor");
   const otroEstudiante = await createTestUser("estudiante");
   await asignarTareaDirecto(otroLoteId, "humedad", otroEstudiante.id, otroProfesor.id);
@@ -116,7 +128,7 @@ test("un profesor asigna una tarea y el estudiante la ve pendiente en /admin/tar
   );
   const filaDeOtroProfesor = page
     .locator("tbody tr")
-    .filter({ hasText: "Lote asignado por otro profesor" });
+    .filter({ hasText: nombreOtroLote });
   await expect(filaDeOtroProfesor).toContainText("Humedad");
   await expect(filaDeOtroProfesor).toContainText("Pendiente");
 });
@@ -133,7 +145,7 @@ test("un estudiante no ve el formulario de asignar tarea", async ({ page }) => {
 });
 
 test("un estudiante no puede asignar tareas directamente, RLS lo rechaza", async () => {
-  const loteId = await crearLoteDePrueba("Lote RLS asignar");
+  const loteId = await crearLoteDePrueba(nombreUnico("Lote RLS asignar"));
   const estudiante = await createTestUser("estudiante");
   const otro = await createTestUser("estudiante");
 
@@ -158,7 +170,7 @@ test("un estudiante no puede asignar tareas directamente, RLS lo rechaza", async
 });
 
 test("registrar la tarea correcta la completa automáticamente", async ({ page }) => {
-  const loteId = await crearLoteDePrueba("Lote autocompletado");
+  const loteId = await crearLoteDePrueba(nombreUnico("Lote autocompletado"));
   const profesor = await createTestUser("profesor");
   const estudiante = await createTestUser("estudiante");
   await asignarTareaDirecto(loteId, "riego", estudiante.id, profesor.id);
@@ -177,7 +189,7 @@ test("registrar la tarea correcta la completa automáticamente", async ({ page }
 });
 
 test("registrar un tipo distinto no completa la tarea asignada", async ({ page }) => {
-  const loteId = await crearLoteDePrueba("Lote sin autocompletar");
+  const loteId = await crearLoteDePrueba(nombreUnico("Lote sin autocompletar"));
   const profesor = await createTestUser("profesor");
   const estudiante = await createTestUser("estudiante");
   await asignarTareaDirecto(loteId, "riego", estudiante.id, profesor.id);
@@ -198,7 +210,7 @@ test("registrar un tipo distinto no completa la tarea asignada", async ({ page }
 test("si otra persona registra la tarea, la tarea asignada no se completa (CA6)", async ({
   page,
 }) => {
-  const loteId = await crearLoteDePrueba("Lote otra persona registra");
+  const loteId = await crearLoteDePrueba(nombreUnico("Lote otra persona registra"));
   const profesor = await createTestUser("profesor");
   const estudianteAsignado = await createTestUser("estudiante");
   const otraPersona = await createTestUser("estudiante");
@@ -226,7 +238,7 @@ test("si otra persona registra la tarea, la tarea asignada no se completa (CA6)"
 test("un estudiante en /admin/tareas solo ve sus propias tareas, no las de otros", async ({
   page,
 }) => {
-  const loteId = await crearLoteDePrueba("Lote visibilidad cruzada");
+  const loteId = await crearLoteDePrueba(nombreUnico("Lote visibilidad cruzada"));
   const profesor = await createTestUser("profesor");
   const estudianteA = await createTestUser("estudiante");
   const estudianteB = await createTestUser("estudiante");

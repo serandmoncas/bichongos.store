@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { Client } from "pg";
 import { randomUUID } from "node:crypto";
 import { createTestUser } from "./fixtures/test-users";
+import { nombreUnico } from "./fixtures/nombres";
 
 const DB_URL =
   process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
@@ -51,7 +52,7 @@ async function habilitarParaOperar(userId: string): Promise<void> {
 }
 
 test("un estudiante registra una tarea y la ve en la bitácora sin recargar", async ({ page }) => {
-  const loteId = await crearLoteDePrueba("Lote bitácora estudiante");
+  const loteId = await crearLoteDePrueba(nombreUnico("Lote bitácora estudiante"));
   const estudiante = await createTestUser("estudiante");
   await habilitarParaOperar(estudiante.id);
 
@@ -69,7 +70,7 @@ test("un estudiante registra una tarea y la ve en la bitácora sin recargar", as
 });
 
 test("un estudiante ve el lote de solo lectura, sin el formulario de editar", async ({ page }) => {
-  const loteId = await crearLoteDePrueba("Lote solo lectura");
+  const loteId = await crearLoteDePrueba(nombreUnico("Lote solo lectura"));
   const estudiante = await createTestUser("estudiante");
 
   await page.goto(
@@ -81,7 +82,7 @@ test("un estudiante ve el lote de solo lectura, sin el formulario de editar", as
 });
 
 test("un operador sigue pudiendo editar el lote desde la misma página", async ({ page }) => {
-  const loteId = await crearLoteDePrueba("Lote editable");
+  const loteId = await crearLoteDePrueba(nombreUnico("Lote editable"));
   const operador = await createTestUser("operador");
 
   await page.goto(
@@ -97,7 +98,7 @@ test("un operador sigue pudiendo editar el lote desde la misma página", async (
 test("la bitácora muestra el nombre real de cada autor, no solo el del usuario que mira", async ({
   page,
 }) => {
-  const loteId = await crearLoteDePrueba("Lote bitácora multi-autor");
+  const loteId = await crearLoteDePrueba(nombreUnico("Lote bitácora multi-autor"));
   // operador y no estudiante: este test va de resolución de nombres para un
   // espectador no-admin, y el rol de quien registra es incidental. Usar
   // operador lo mantiene independiente del gate de competencias (historia 27).
@@ -145,7 +146,7 @@ test("la bitácora muestra el nombre real de cada autor, no solo el del usuario 
 });
 
 test("un usuario no puede registrar una tarea a nombre de otro, RLS lo rechaza", async () => {
-  const loteId = await crearLoteDePrueba("Lote suplantación");
+  const loteId = await crearLoteDePrueba(nombreUnico("Lote suplantación"));
   const estudianteA = await createTestUser("estudiante");
   const estudianteB = await createTestUser("estudiante");
 
