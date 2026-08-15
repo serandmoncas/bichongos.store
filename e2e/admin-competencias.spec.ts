@@ -270,3 +270,86 @@ test("un estudiante que visita la ruta de editar es redirigido al catálogo", as
   await page.goto(`/admin/competencias/${competenciaId}/editar`);
   await expect(page).toHaveURL(/\/admin\/competencias$/);
 });
+
+test("no se le puede validar una competencia a alguien con la cuenta pendiente de aprobación", async () => {
+  const profesor = await createTestUser("profesor");
+  const pendiente = await createTestUser("pendiente");
+  const competenciaId = await crearCompetenciaDePrueba(
+    nombreUnico("Habilita operar"),
+    true,
+    profesor.id
+  );
+
+  const db = new Client({ connectionString: DB_URL });
+  await db.connect();
+  try {
+    await db.query("begin");
+    await db.query("set local role authenticated");
+    await db.query(
+      `set local "request.jwt.claims" = '${JSON.stringify({ sub: profesor.id, role: "authenticated" })}'`
+    );
+
+    // La UI no ofrece este camino —listar_usuarios_aprobados() ya excluye a
+    // los pendientes— pero PostgREST sí acepta el id directo. Sin el guard,
+    // un profesor puede dejarle el permiso preparado a una cuenta que nadie
+    // ha autorizado todavía: cuando un admin la apruebe como estudiante,
+    // opera de inmediato sin que nadie revise nada.
+    await expect(
+      db.query(
+        "insert into public.competencias_validadas (competencia_id, user_id, validado_por) values ($1, $2, $3)",
+        [competenciaId, pendiente.id, profesor.id]
+      )
+    ).rejects.toThrow();
+
+    await db.query("rollback");
+  } finally {
+    await db.end();
+  }
+});
+
+test("editar una competencia no reescribe quién la creó ni cuándo", async () => {
+  const profesorA = await createTestUser("profesor");
+  const profesorB = await createTestUser("profesor");
+  const competenciaId = await crearCompetenciaDePrueba(
+    nombreUnico("Competencia con autoría"),
+    false,
+    profesorA.id
+  );
+
+  const db = new Client({ connectionString: DB_URL });
+  await db.connect();
+  try {
+    const antes = await db.query(
+      "select created_by, created_at from public.competencias where id = $1",
+      [competenciaId]
+    );
+
+    await db.query("begin");
+    await db.query("set local role authenticated");
+    await db.query(
+      `set local "request.jwt.claims" = '${JSON.stringify({ sub: profesorB.id, role: "authenticated" })}'`
+    );
+    // B edita y de paso intenta atribuirse la creación. La policy de UPDATE
+    // le permite editar la competencia de otro (es documentación compartida),
+    // pero created_by/created_at no son suyos para reescribir.
+    const upd = await db.query(
+      `update public.competencias
+          set nombre = $1, updated_by = $2, created_by = $2, created_at = now()
+        where id = $3`,
+      [nombreUnico("Renombrada por B"), profesorB.id, competenciaId]
+    );
+    expect(upd.rowCount).toBe(1);
+    await db.query("commit");
+
+    const despues = await db.query(
+      "select created_by, created_at, updated_by from public.competencias where id = $1",
+      [competenciaId]
+    );
+    expect(despues.rows[0].created_by).toBe(antes.rows[0].created_by);
+    expect(despues.rows[0].created_at.getTime()).toBe(antes.rows[0].created_at.getTime());
+    // La edición sí ocurrió: updated_by quedó en B.
+    expect(despues.rows[0].updated_by).toBe(profesorB.id);
+  } finally {
+    await db.end();
+  }
+});

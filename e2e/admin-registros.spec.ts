@@ -149,6 +149,11 @@ test("un usuario no puede registrar una tarea a nombre de otro, RLS lo rechaza",
   const loteId = await crearLoteDePrueba(nombreUnico("Lote suplantación"));
   const estudianteA = await createTestUser("estudiante");
   const estudianteB = await createTestUser("estudiante");
+  // A queda habilitado a propósito. Sin esto el INSERT de abajo falla por dos
+  // motivos a la vez —el gate de competencias Y la cláusula user_id =
+  // auth.uid()— y el test deja de aislar lo que dice probar: si alguien
+  // quitara esa cláusula de la policy, seguiría verde.
+  await habilitarParaOperar(estudianteA.id);
 
   const db = new Client({ connectionString: DB_URL });
   await db.connect();
