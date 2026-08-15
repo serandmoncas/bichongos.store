@@ -21,7 +21,11 @@
 
 Hoy la policy de INSERT de `registros` (migración 8) permite escribir la bitácora de un lote a **cualquier rol aprobado**. Es decir: un estudiante recién aprobado, sin formación alguna, puede registrar una lectura de temperatura falsa sobre un lote de producción real. Esta historia endurece esa policy — un `estudiante` necesita al menos una competencia habilitante validada por un profesor. Operador, profesor y admin siguen sin restricción.
 
-**Nadie queda bloqueado al desplegar.** Verificado contra producción el 2026-08-14: los tres usuarios existentes son `admin`, `profesor` y `operador`. No hay ningún `estudiante`, así que este cambio no le quita un permiso que hoy alguien esté usando. Pero el próximo estudiante que un admin apruebe va a entrar sin poder registrar hasta que alguien lo valide — ese es el punto de la historia, y Juan y Daniela deberían saberlo antes de que ocurra.
+**Corrección (2026-08-15): sí quedaron dos personas bloqueadas.** Este párrafo decía originalmente que producción no tenía ningún `estudiante` y que por lo tanto nadie perdía un permiso al desplegar. Era falso. Al aplicar la migración 19 había dos estudiantes activos: `smonsalve@gmail.com` (aprobado el 2026-07-28, es decir que ya existía cuando se escribió este diseño — el conteo estaba mal desde el día uno) y `juan@managerjb.com` (aprobado el mismo 2026-08-15). Ninguno de los dos había escrito nunca en la bitácora, así que se decidió aplicar la migración igual y dejarlos bloqueados hasta que un profesor les valide una competencia habilitante: el gate no interrumpe un trabajo en curso, solo adelanta la validación que la historia exige de todos modos.
+
+**La lección:** el conteo de usuarios de producción es estado vivo, no un dato del diseño. Verificarlo al escribir la spec no sirve de nada — hay que volver a consultarlo en el momento de aplicar la migración, y decidir con ese número. Cualquier futura migración que quite permisos debe repetir la consulta justo antes de correr, no confiar en lo que diga el documento.
+
+Con o sin esos dos casos, el punto de fondo no cambia: el próximo estudiante que un admin apruebe va a entrar sin poder registrar hasta que alguien lo valide — ese es el propósito de la historia, y Juan y Daniela deberían saberlo antes de que ocurra.
 
 ### Por qué esto no depende de las lecturas
 
