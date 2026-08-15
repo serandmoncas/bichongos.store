@@ -81,6 +81,10 @@ Principio clave: **OAuth autentica, la autorización la controla la app** (aprob
 
 ### Épica 6 — Capacitación (post-MVP) ✅
 Reutilizar contenido existente: los SOPs y fichas de especies del repo `Bichongos` (I+D de Sergio Monsalve, `github.com/serandmoncas/Bichongos`) son candidatos directos en vez de escribir contenido de cero. Se cargaron 21 documentos reales de ese repo a producción el 2026-08-14.
+
+**Categorías de contenido (migración 20, 2026-08-15):** el enum `contenido_categoria` tiene `ficha_especie`, `sop` y `administrativa`. La última se agregó para documentos que no son material formativo — acuerdos de reunión, cronogramas, criterios de compra, lineamientos de trabajo — y estrenó con el contenido del kickoff de la primera siembra. **`src/app/admin/contenidos/categorias.ts` es el catálogo único**: agregar una categoría es una línea ahí más el valor del enum, nada más. Antes la lista vivía duplicada en cinco archivos.
+
+**Un valor de enum recién agregado no se puede usar en la misma transacción que lo agrega.** Por eso la migración 20 contiene solo el `alter type` y el contenido se insertó aparte. Cualquier migración futura que agregue un valor de enum y quiera usarlo tiene que ir en dos transacciones.
 25. ✅ Módulo de contenidos (suben profesores)
 26. ✅ Seguimiento de progreso por estudiante
 27. ✅ Checklist de competencias antes de acceso a operaciones reales
@@ -98,6 +102,10 @@ Solo tiene sentido cuando Juan/Daniela tengan su propia cápsula física funcion
 
 ### Épica 8 — Calidad y operación
 32. ✅ Pruebas de flujos críticos (auth, permisos por rol) — adelantada fuera de orden como parte del harness de ingeniería (2026-07-24): CI en GitHub Actions (lint/typecheck/build/unit siempre, E2E con Supabase local en cada PR), Vitest para unit, Playwright para E2E del gate por rol. Ver `docs/superpowers/specs/2026-07-23-harness-ingenieria-design.md`.
+
+**La suite E2E no limpiaba nada de lo que creaba** (arreglado el 2026-08-15). CI nunca lo vio porque cada job levanta un Supabase limpio, pero en local la base sobrevive entre corridas y los datos se acumulaban: al detectarlo había 1051 usuarios de prueba, y los formularios que listan personas renderizan un `<option>` por usuario aprobado, así que `selectOption` se iba a timeout y tests correctos fallaban por una razón ajena a lo que verifican. Ahora hay `globalTeardown` (`e2e/fixtures/teardown.ts`) y todo nombre de dato de prueba pasa por `nombreUnico()` (`e2e/fixtures/nombres.ts`). **Regla: ningún test siembra datos con un nombre fijo.**
+
+**Los formularios asocian etiqueta y control con `htmlFor` + `useId()`, nunca envolviendo el control en el `<label>`.** Envolviéndolo, el nombre accesible de un `<select>` incluye el texto de todas sus `<option>` — además de ser un defecto de accesibilidad real, vuelve ambiguos los `getByLabel` de Playwright. El test `admin-tareas.spec.ts` siembra a propósito un lote con la palabra «persona» en el nombre para que esto falle si alguien lo revierte.
 33. ⏳ Backups y política de datos en Supabase
 34. ⏳ Documentación de onboarding para usuarios capacitados
 
