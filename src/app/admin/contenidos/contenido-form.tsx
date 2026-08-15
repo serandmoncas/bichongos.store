@@ -1,13 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { ContenidoCategoria, ContenidoFormValues } from "./actions";
-
-const CATEGORIAS: { value: ContenidoCategoria; label: string }[] = [
-  { value: "ficha_especie", label: "Ficha de especie" },
-  { value: "sop", label: "SOP" },
-];
+import type { ContenidoFormValues } from "./actions";
+import { CATEGORIAS, type ContenidoCategoria } from "./categorias";
 
 export function ContenidoForm({
   initialValues,
@@ -20,6 +16,7 @@ export function ContenidoForm({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const id = useId();
 
   return (
     <form
@@ -37,18 +34,20 @@ export function ContenidoForm({
         });
       }}
     >
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Título
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-titulo`}>Título</label>
         <input
+          id={`${id}-titulo`}
           required
           value={values.titulo}
           onChange={(e) => setValues({ ...values, titulo: e.target.value })}
           className="border border-tinta/20 bg-transparent px-2 py-1"
         />
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Categoría
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-categoria`}>Categoría</label>
         <select
+          id={`${id}-categoria`}
           value={values.categoria}
           onChange={(e) =>
             setValues({ ...values, categoria: e.target.value as ContenidoCategoria })
@@ -61,26 +60,28 @@ export function ContenidoForm({
             </option>
           ))}
         </select>
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Nivel
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-nivel`}>Nivel</label>
         <input
+          id={`${id}-nivel`}
           value={values.nivel}
           onChange={(e) => setValues({ ...values, nivel: e.target.value })}
           placeholder="N1, N2, N3, N4…"
           className="border border-tinta/20 bg-transparent px-2 py-1"
         />
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Cuerpo (Markdown)
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-cuerpo`}>Cuerpo (Markdown)</label>
         <textarea
+          id={`${id}-cuerpo`}
           required
           rows={20}
           value={values.cuerpo}
           onChange={(e) => setValues({ ...values, cuerpo: e.target.value })}
           className="border border-tinta/20 bg-transparent px-2 py-1 font-mono"
         />
-      </label>
+      </div>
       <button
         type="submit"
         disabled={isPending}

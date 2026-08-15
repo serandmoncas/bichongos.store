@@ -1,18 +1,17 @@
-import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { Client } from "pg";
 import { createTestUser } from "./fixtures/test-users";
+import { nombreUnico } from "./fixtures/nombres";
+// Import de tipo puro (se borra al compilar, no acopla el test al runtime de
+// la app): agregar una categoría al catálogo no obliga a tocar este archivo.
+import type { ContenidoCategoria } from "../src/app/admin/contenidos/categorias";
 
 const DB_URL =
   process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
-function tituloUnico(base: string): string {
-  return `${base} ${randomUUID().slice(0, 8)}`;
-}
-
 async function crearContenidoDePrueba(
   titulo: string,
-  categoria: "ficha_especie" | "sop",
+  categoria: ContenidoCategoria,
   nivel: string | null,
   creadoPorId: string
 ): Promise<string> {
@@ -33,7 +32,7 @@ test("un profesor crea un contenido y el detalle lo renderiza como markdown, no 
   page,
 }) => {
   const profesor = await createTestUser("profesor");
-  const titulo = tituloUnico("Ficha de prueba");
+  const titulo = nombreUnico("Ficha de prueba");
 
   await page.goto(
     `/e2e-login?email=${encodeURIComponent(profesor.email)}&password=${encodeURIComponent(profesor.password)}&next=/admin/contenidos/nuevo`
@@ -58,7 +57,7 @@ test("un estudiante ve el contenido pero no los controles de crear/editar/elimin
   page,
 }) => {
   const profesor = await createTestUser("profesor");
-  const titulo = tituloUnico("Contenido solo lectura");
+  const titulo = nombreUnico("Contenido solo lectura");
   const contenidoId = await crearContenidoDePrueba(titulo, "sop", "N2", profesor.id);
   const estudiante = await createTestUser("estudiante");
 
@@ -93,7 +92,7 @@ test("un estudiante ve el contenido pero no los controles de crear/editar/elimin
 test("un estudiante no puede escribir contenido directamente (INSERT/UPDATE/DELETE), RLS lo rechaza", async () => {
   const profesor = await createTestUser("profesor");
   const contenidoId = await crearContenidoDePrueba(
-    tituloUnico("Contenido protegido"),
+    nombreUnico("Contenido protegido"),
     "sop",
     null,
     profesor.id
@@ -119,7 +118,7 @@ test("un estudiante no puede escribir contenido directamente (INSERT/UPDATE/DELE
     await expect(
       db.query(
         "insert into public.contenidos (titulo, categoria, cuerpo, created_by) values ($1, $2, $3, $4)",
-        [tituloUnico("Intento estudiante"), "sop", "cuerpo", estudiante.id]
+        [nombreUnico("Intento estudiante"), "sop", "cuerpo", estudiante.id]
       )
     ).rejects.toThrow();
     await db.query("rollback to savepoint before_insert");
@@ -148,8 +147,8 @@ test("un profesor distinto puede editar el contenido de otro, y queda registrado
 }) => {
   const profesorA = await createTestUser("profesor");
   const profesorB = await createTestUser("profesor");
-  const tituloOriginal = tituloUnico("Contenido editado por otro");
-  const tituloEditado = tituloUnico("Título editado por B");
+  const tituloOriginal = nombreUnico("Contenido editado por otro");
+  const tituloEditado = nombreUnico("Título editado por B");
   const contenidoId = await crearContenidoDePrueba(
     tituloOriginal,
     "ficha_especie",
@@ -186,7 +185,7 @@ test("un profesor distinto puede editar el contenido de otro, y queda registrado
 
 test("un profesor puede eliminar un contenido", async ({ page }) => {
   const profesor = await createTestUser("profesor");
-  const titulo = tituloUnico("Contenido a eliminar");
+  const titulo = nombreUnico("Contenido a eliminar");
   const contenidoId = await crearContenidoDePrueba(titulo, "sop", null, profesor.id);
 
   page.on("dialog", (dialog) => dialog.accept());
@@ -203,7 +202,7 @@ test("el nivel es metadata visible pero no restringe el acceso de un estudiante"
   page,
 }) => {
   const profesor = await createTestUser("profesor");
-  const titulo = tituloUnico("Contenido nivel avanzado");
+  const titulo = nombreUnico("Contenido nivel avanzado");
   const contenidoId = await crearContenidoDePrueba(titulo, "sop", "N4", profesor.id);
   const estudiante = await createTestUser("estudiante");
 
@@ -230,7 +229,7 @@ test("un estudiante que visita /admin/contenidos/[id]/editar es redirigido al de
 }) => {
   const profesor = await createTestUser("profesor");
   const contenidoId = await crearContenidoDePrueba(
-    tituloUnico("Contenido con guard de edición"),
+    nombreUnico("Contenido con guard de edición"),
     "sop",
     null,
     profesor.id
@@ -247,4 +246,46 @@ test("un estudiante que visita /admin/contenidos/[id]/editar es redirigido al de
 
   await page.goto(`/admin/contenidos/${contenidoId}/editar`);
   await expect(page).toHaveURL(new RegExp(`/admin/contenidos/${contenidoId}$`));
+});
+
+test("un profesor publica un contenido administrativo sin nivel y el filtro lo aísla", async ({
+  page,
+}) => {
+  const profesor = await createTestUser("profesor");
+  const tituloAdmin = nombreUnico("Acuerdos de reunión");
+  // Un SOP sembrado sirve de control: si el filtro no filtrara nada, este
+  // también aparecería en la lista de «Administrativas».
+  const tituloSop = nombreUnico("SOP que no debe aparecer");
+  await crearContenidoDePrueba(tituloSop, "sop", "N2", profesor.id);
+
+  await page.goto(
+    `/e2e-login?email=${encodeURIComponent(profesor.email)}&password=${encodeURIComponent(profesor.password)}&next=/admin/contenidos/nuevo`
+  );
+  await page.getByLabel("Título").fill(tituloAdmin);
+  await page.getByLabel("Categoría").selectOption("administrativa");
+  // CA3: el nivel se deja deliberadamente en blanco.
+  await page.getByLabel("Cuerpo (Markdown)").fill("Acuerdos del kickoff.");
+  await page.getByRole("button", { name: "Guardar" }).click();
+
+  await expect(page).toHaveURL(/\/admin\/contenidos$/);
+  const fila = page.locator("tr", { has: page.getByRole("link", { name: tituloAdmin }) });
+  await expect(fila.getByText("Administrativa")).toBeVisible();
+  await expect(fila.getByText("—")).toBeVisible();
+
+  await page.goto("/admin/contenidos?categoria=administrativa");
+  await expect(page.getByRole("link", { name: tituloAdmin })).toBeVisible();
+  await expect(page.getByRole("link", { name: tituloSop })).toHaveCount(0);
+
+  // CA4: los contenidos que ya existían siguen filtrándose igual.
+  await page.goto("/admin/contenidos?categoria=sop");
+  await expect(page.getByRole("link", { name: tituloSop })).toBeVisible();
+  await expect(page.getByRole("link", { name: tituloAdmin })).toHaveCount(0);
+
+  // Una categoría que no existe cae de vuelta a «Todas» en vez de filtrar por
+  // un valor inválido. "constructor" en particular es el caso que un
+  // `esCategoria` habría dado por bueno si usara `in` en vez de
+  // `Object.hasOwn`, porque `in` también ve Object.prototype.
+  await page.goto("/admin/contenidos?categoria=constructor");
+  await expect(page.getByRole("link", { name: tituloAdmin })).toBeVisible();
+  await expect(page.getByRole("link", { name: tituloSop })).toBeVisible();
 });

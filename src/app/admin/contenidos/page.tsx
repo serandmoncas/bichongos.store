@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { CATEGORIA_LABELS } from "./categorias";
+import { CATEGORIAS, esCategoria, etiquetaCategoria } from "./categorias";
 
 const ROLES_QUE_GESTIONAN_CONTENIDOS = ["profesor", "admin"];
 
@@ -27,8 +27,7 @@ export default async function ContenidosPage({
   const canEdit = ROLES_QUE_GESTIONAN_CONTENIDOS.includes(profile?.role ?? "");
 
   const COLUMNAS = "id, titulo, categoria, nivel, created_at";
-  const categoriaValida =
-    categoria === "ficha_especie" || categoria === "sop" ? categoria : null;
+  const categoriaValida = categoria && esCategoria(categoria) ? categoria : null;
 
   const { data: contenidos } = categoriaValida
     ? await supabase
@@ -76,18 +75,15 @@ export default async function ContenidosPage({
         <Link href="/admin/contenidos" className={filtroClase(!categoriaValida)}>
           Todas
         </Link>
-        <Link
-          href="/admin/contenidos?categoria=ficha_especie"
-          className={filtroClase(categoriaValida === "ficha_especie")}
-        >
-          Fichas de especie
-        </Link>
-        <Link
-          href="/admin/contenidos?categoria=sop"
-          className={filtroClase(categoriaValida === "sop")}
-        >
-          SOPs
-        </Link>
+        {CATEGORIAS.map((c) => (
+          <Link
+            key={c.value}
+            href={`/admin/contenidos?categoria=${c.value}`}
+            className={filtroClase(categoriaValida === c.value)}
+          >
+            {c.plural}
+          </Link>
+        ))}
       </div>
       <table className="mt-8 w-full font-mono text-sm">
         <thead>
@@ -118,7 +114,7 @@ export default async function ContenidosPage({
                 </Link>
               </td>
               <td className="py-2 pr-4">
-                {CATEGORIA_LABELS[contenido.categoria] ?? contenido.categoria}
+                {etiquetaCategoria(contenido.categoria)}
               </td>
               <td className="py-2 pr-4">{contenido.nivel ?? "—"}</td>
               <td className="py-2">

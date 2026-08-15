@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import { createClient } from "@/lib/supabase/server";
 import { EliminarContenidoButton } from "./eliminar-contenido-button";
 import { LecturaToggle } from "./lectura-toggle";
-import { CATEGORIA_LABELS } from "../categorias";
+import { etiquetaCategoria } from "../categorias";
 
 const ROLES_QUE_GESTIONAN_CONTENIDOS = ["profesor", "admin"];
 
@@ -53,7 +53,7 @@ export default async function ContenidoDetallePage({
         <div>
           <h1 className="font-serif text-2xl font-semibold">{contenido.titulo}</h1>
           <p className="mt-1 font-mono text-sm text-tinta/60">
-            {CATEGORIA_LABELS[contenido.categoria] ?? contenido.categoria}
+            {etiquetaCategoria(contenido.categoria)}
             {contenido.nivel && ` · ${contenido.nivel}`}
           </p>
         </div>

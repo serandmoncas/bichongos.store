@@ -1,0 +1,14 @@
+-- Agrega la categoría «Administrativa» al módulo de contenidos (Épica 6).
+-- Documentos que no son ficha de especie ni SOP: acuerdos de reunión,
+-- cronogramas, criterios de compra, lineamientos de trabajo con el equipo.
+--
+-- Esta migración contiene SOLO el alter type, a propósito: Postgres no deja
+-- usar un valor de enum recién agregado dentro de la misma transacción que lo
+-- agrega. Cualquier insert con 'administrativa' tiene que ir en una
+-- transacción posterior, nunca en este archivo.
+--
+-- El valor queda de último en el orden del enum. Hoy nada ordena por
+-- categoria (la lista ordena por created_at desc), así que no es observable.
+--
+-- if not exists la hace idempotente: reintentar no falla.
+alter type public.contenido_categoria add value if not exists 'administrativa';

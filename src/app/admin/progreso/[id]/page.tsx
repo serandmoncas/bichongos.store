@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { CATEGORIA_LABELS } from "../../contenidos/categorias";
+import { etiquetaCategoria } from "../../contenidos/categorias";
 
 const ROLES_QUE_SUPERVISAN = ["profesor", "admin"];
 
@@ -92,7 +92,7 @@ export default async function ProgresoPersonaPage({
                   </Link>
                 </td>
                 <td className="py-2 pr-4">
-                  {contenido ? (CATEGORIA_LABELS[contenido.categoria] ?? contenido.categoria) : "—"}
+                  {contenido ? etiquetaCategoria(contenido.categoria) : "—"}
                 </td>
                 <td className="py-2 pr-4">{contenido?.nivel ?? "—"}</td>
                 <td className="py-2">
