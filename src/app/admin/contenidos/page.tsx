@@ -60,7 +60,7 @@ export default async function ContenidosPage({
         <div>
           <h1 className="font-serif text-2xl font-semibold">Contenidos</h1>
           <p className="mt-1 font-mono text-sm text-tinta/60">
-            {leidos.size} de {totalContenidos ?? 0} leídos
+            {leidos.size} de {totalContenidos ?? 0} leídos en total
           </p>
         </div>
         {canEdit && (

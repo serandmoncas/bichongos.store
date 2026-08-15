@@ -28,6 +28,13 @@ export default async function ProgresoPage() {
     "listar_usuarios_aprobados"
   );
 
+  // Sin límite explícito, y `supabase/config.toml` fija max_rows = 1000: pasado ese
+  // umbral (aprox. 47 personas x 21 contenidos a la escala actual) PostgREST trunca
+  // la respuesta sin error, y algunos conteos por persona quedarían silenciosamente
+  // por debajo del real. A la escala de hoy es irrelevante, pero antes de que el
+  // equipo o la biblioteca de contenidos crezcan más allá de ese techo, esto necesita
+  // una agregación del lado del servidor (p. ej. una función RPC que haga el count
+  // agrupado en Postgres) en vez de traer todas las filas para sumarlas en memoria.
   const { data: lecturas } = await supabase.from("lecturas").select("user_id");
 
   const { count: totalContenidos } = await supabase

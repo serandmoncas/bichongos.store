@@ -16,6 +16,14 @@ export async function marcarLeido(contenidoId: string) {
     .insert({ contenido_id: contenidoId, user_id: userId })
     .select("id");
   if (error) {
+    // 23505 = violación de unique(contenido_id, user_id): ya estaba marcado (p. ej.
+    // dos pestañas abiertas). Marcar es idempotente por diseño — el estado deseado
+    // (la lectura existe) ya es cierto, así que esto no es un error del usuario.
+    if (error.code === "23505") {
+      revalidatePath("/admin/contenidos");
+      revalidatePath(`/admin/contenidos/${contenidoId}`);
+      return;
+    }
     throw new Error(`No se pudo marcar como leído: ${error.message}`);
   }
   if (!rows?.length) {
