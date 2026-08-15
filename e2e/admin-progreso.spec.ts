@@ -44,6 +44,9 @@ test("un estudiante marca y desmarca un contenido, y su avance se refleja en la 
   await page.goto("/admin/contenidos");
   const fila = page.locator("tbody tr", { hasText: titulo });
   await expect(fila).toContainText("✓");
+  // El estudiante es recién creado, así que su conteo propio es determinístico (1);
+  // el total no lo es (otros tests crean contenidos en paralelo), de ahí el patrón.
+  await expect(page.getByText(/^1 de \d+ leídos en total$/)).toBeVisible();
 
   // Desmarcar lo revierte.
   await page.goto(`/admin/contenidos/${contenidoId}`);
@@ -53,6 +56,7 @@ test("un estudiante marca y desmarca un contenido, y su avance se refleja en la 
   await page.goto("/admin/contenidos");
   const filaSinMarca = page.locator("tbody tr", { hasText: titulo });
   await expect(filaSinMarca).not.toContainText("✓");
+  await expect(page.getByText(/^0 de \d+ leídos en total$/)).toBeVisible();
 });
 
 test("un profesor ve en /admin/progreso lo que marcó el estudiante", async ({ page }) => {
@@ -146,14 +150,16 @@ test("un profesor no puede borrar la lectura de otra persona (afecta cero filas)
       contenidoId,
     ]);
     expect(resultado.rowCount).toBe(0);
-    await db.query("rollback");
 
-    // La lectura del estudiante sigue existiendo.
+    // La lectura del estudiante sigue existiendo (verificado dentro de la misma
+    // transacción, antes del rollback, para que realmente refleje el efecto del DELETE).
     const quedan = await db.query(
       "select count(*)::int as n from public.lecturas where contenido_id = $1",
       [contenidoId]
     );
     expect(quedan.rows[0].n).toBe(1);
+
+    await db.query("rollback");
   } finally {
     await db.end();
   }
