@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LoteForm } from "../lote-form";
@@ -61,6 +62,8 @@ export default async function LoteDetallePage({
     const p = perfiles?.find((p: Perfil) => p.id === userId);
     return p?.nombre ?? p?.email ?? userId;
   };
+
+  const { data: puedeRegistrar } = await supabase.rpc("puede_registrar");
 
   const updateLoteBound = updateLote.bind(null, lote.id);
 
@@ -131,7 +134,17 @@ export default async function LoteDetallePage({
             ))}
           </tbody>
         </table>
-        <RegistroForm loteId={lote.id} />
+        {puedeRegistrar ? (
+          <RegistroForm loteId={lote.id} />
+        ) : (
+          <p className="mt-4 max-w-xl font-mono text-sm text-terracota">
+            No podés registrar tareas todavía: necesitás que un profesor te valide una
+            competencia que habilite operar.{" "}
+            <Link href="/admin/competencias" className="underline">
+              Ver mis competencias
+            </Link>
+          </p>
+        )}
       </div>
     </main>
   );
