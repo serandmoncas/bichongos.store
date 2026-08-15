@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { Client } from "pg";
+import { randomUUID } from "node:crypto";
 import { createTestUser } from "./fixtures/test-users";
 
 const DB_URL =
@@ -15,6 +16,35 @@ async function crearLoteDePrueba(nombre: string): Promise<string> {
       [nombre, "Orellana", "2026-08-08", operador.id]
     );
     return result.rows[0].id as string;
+  } finally {
+    await db.end();
+  }
+}
+
+async function habilitarParaOperar(userId: string): Promise<void> {
+  const db = new Client({ connectionString: DB_URL });
+  await db.connect();
+  try {
+    // El gate de la historia 27 exige que un estudiante tenga al menos una
+    // competencia habilitante validada para registrar en bitácora. Se crea
+    // una por test para no depender del catálogo real ni de otros tests.
+    const profesor = await db.query(
+      "insert into auth.users (id, email) values (gen_random_uuid(), $1) returning id",
+      [`validador-${randomUUID()}@bichongos.test`]
+    );
+    const profesorId = profesor.rows[0].id as string;
+    await db.query("set session_replication_role = replica");
+    await db.query("update public.profiles set role = 'profesor' where id = $1", [profesorId]);
+    await db.query("set session_replication_role = default");
+
+    const competencia = await db.query(
+      "insert into public.competencias (nombre, habilita_operar, created_by) values ($1, true, $2) returning id",
+      [`Opera cultivo ${randomUUID().slice(0, 8)}`, profesorId]
+    );
+    await db.query(
+      "insert into public.competencias_validadas (competencia_id, user_id, validado_por) values ($1, $2, $3)",
+      [competencia.rows[0].id, userId, profesorId]
+    );
   } finally {
     await db.end();
   }
@@ -132,6 +162,7 @@ test("registrar la tarea correcta la completa automáticamente", async ({ page }
   const profesor = await createTestUser("profesor");
   const estudiante = await createTestUser("estudiante");
   await asignarTareaDirecto(loteId, "riego", estudiante.id, profesor.id);
+  await habilitarParaOperar(estudiante.id);
 
   await page.goto(
     `/e2e-login?email=${encodeURIComponent(estudiante.email)}&password=${encodeURIComponent(estudiante.password)}&next=/admin/lotes/${loteId}`
@@ -150,6 +181,7 @@ test("registrar un tipo distinto no completa la tarea asignada", async ({ page }
   const profesor = await createTestUser("profesor");
   const estudiante = await createTestUser("estudiante");
   await asignarTareaDirecto(loteId, "riego", estudiante.id, profesor.id);
+  await habilitarParaOperar(estudiante.id);
 
   await page.goto(
     `/e2e-login?email=${encodeURIComponent(estudiante.email)}&password=${encodeURIComponent(estudiante.password)}&next=/admin/lotes/${loteId}`
@@ -171,6 +203,9 @@ test("si otra persona registra la tarea, la tarea asignada no se completa (CA6)"
   const estudianteAsignado = await createTestUser("estudiante");
   const otraPersona = await createTestUser("estudiante");
   await asignarTareaDirecto(loteId, "riego", estudianteAsignado.id, profesor.id);
+  // Solo otraPersona registra en este test; estudianteAsignado no necesita
+  // la competencia porque nunca toca el formulario.
+  await habilitarParaOperar(otraPersona.id);
 
   await page.goto(
     `/e2e-login?email=${encodeURIComponent(otraPersona.email)}&password=${encodeURIComponent(otraPersona.password)}&next=/admin/lotes/${loteId}`

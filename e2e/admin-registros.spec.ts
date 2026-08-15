@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { Client } from "pg";
+import { randomUUID } from "node:crypto";
 import { createTestUser } from "./fixtures/test-users";
 
 const DB_URL =
@@ -20,9 +21,39 @@ async function crearLoteDePrueba(nombre: string): Promise<string> {
   }
 }
 
+async function habilitarParaOperar(userId: string): Promise<void> {
+  const db = new Client({ connectionString: DB_URL });
+  await db.connect();
+  try {
+    // El gate de la historia 27 exige que un estudiante tenga al menos una
+    // competencia habilitante validada para registrar en bitácora. Se crea
+    // una por test para no depender del catálogo real ni de otros tests.
+    const profesor = await db.query(
+      "insert into auth.users (id, email) values (gen_random_uuid(), $1) returning id",
+      [`validador-${randomUUID()}@bichongos.test`]
+    );
+    const profesorId = profesor.rows[0].id as string;
+    await db.query("set session_replication_role = replica");
+    await db.query("update public.profiles set role = 'profesor' where id = $1", [profesorId]);
+    await db.query("set session_replication_role = default");
+
+    const competencia = await db.query(
+      "insert into public.competencias (nombre, habilita_operar, created_by) values ($1, true, $2) returning id",
+      [`Opera cultivo ${randomUUID().slice(0, 8)}`, profesorId]
+    );
+    await db.query(
+      "insert into public.competencias_validadas (competencia_id, user_id, validado_por) values ($1, $2, $3)",
+      [competencia.rows[0].id, userId, profesorId]
+    );
+  } finally {
+    await db.end();
+  }
+}
+
 test("un estudiante registra una tarea y la ve en la bitácora sin recargar", async ({ page }) => {
   const loteId = await crearLoteDePrueba("Lote bitácora estudiante");
   const estudiante = await createTestUser("estudiante");
+  await habilitarParaOperar(estudiante.id);
 
   await page.goto(
     `/e2e-login?email=${encodeURIComponent(estudiante.email)}&password=${encodeURIComponent(estudiante.password)}&next=/admin/lotes/${loteId}`
@@ -67,7 +98,10 @@ test("la bitácora muestra el nombre real de cada autor, no solo el del usuario 
   page,
 }) => {
   const loteId = await crearLoteDePrueba("Lote bitácora multi-autor");
-  const estudianteA = await createTestUser("estudiante");
+  // operador y no estudiante: este test va de resolución de nombres para un
+  // espectador no-admin, y el rol de quien registra es incidental. Usar
+  // operador lo mantiene independiente del gate de competencias (historia 27).
+  const operadorA = await createTestUser("operador");
   const operadorB = await createTestUser("operador");
 
   // B registra una tarea directamente en la base (bypass de UI, como
@@ -88,7 +122,7 @@ test("la bitácora muestra el nombre real de cada autor, no solo el del usuario 
 
   // A entra por la UI y registra su propia tarea.
   await page.goto(
-    `/e2e-login?email=${encodeURIComponent(estudianteA.email)}&password=${encodeURIComponent(estudianteA.password)}&next=/admin/lotes/${loteId}`
+    `/e2e-login?email=${encodeURIComponent(operadorA.email)}&password=${encodeURIComponent(operadorA.password)}&next=/admin/lotes/${loteId}`
   );
   await page.getByLabel("Tipo").selectOption("riego");
   await page.getByLabel("Valor").fill("100ml");
@@ -98,7 +132,7 @@ test("la bitácora muestra el nombre real de cada autor, no solo el del usuario 
   // crudo para el registro de B — este es exactamente el bug que corrige
   // la función nombres_de_usuarios frente al query directo a profiles.
   const filaDeA = page.locator("tbody tr", { hasText: "Riego" });
-  await expect(filaDeA).toContainText(estudianteA.email);
+  await expect(filaDeA).toContainText(operadorA.email);
 
   // El bug que corrige esta migración era que "Quién" mostraba el UUID
   // crudo del autor cuando el visitante no era admin. Comprobamos la
