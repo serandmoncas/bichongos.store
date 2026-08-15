@@ -761,11 +761,15 @@ git commit -m "capacitacion: agrega Server Actions y formularios de competencias
 
 **Files:**
 - Create: `src/app/admin/competencias/page.tsx`
+- Create: `src/app/admin/competencias/eliminar-competencia-button.tsx`
+- Create: `src/app/admin/competencias/[id]/editar/page.tsx`
 - Modify: `src/app/admin/layout.tsx`
 
 **Interfaces:**
-- Consumes: `CompetenciaForm`, `ValidarCompetenciaForm`, `createCompetencia`, `deleteCompetencia` (Tarea 3); función RPC `listar_usuarios_aprobados()` (migración 11 — retorna filas `{ id: string; nombre: string | null; email: string; role: string }`); función RPC `nombres_de_usuarios(ids uuid[])` (migración 9 — retorna `{ id, nombre, email }`); tablas de la Tarea 1.
-- Produces: ruta `/admin/competencias`.
+- Consumes: `CompetenciaForm`, `ValidarCompetenciaForm`, `createCompetencia`, `updateCompetencia`, `deleteCompetencia` (Tarea 3); función RPC `listar_usuarios_aprobados()` (migración 11 — retorna filas `{ id: string; nombre: string | null; email: string; role: string }`); función RPC `nombres_de_usuarios(ids uuid[])` (migración 9 — retorna `{ id, nombre, email }`); tablas de la Tarea 1.
+- Produces: rutas `/admin/competencias` y `/admin/competencias/[id]/editar`; componente `EliminarCompetenciaButton({ id }: { id: string })`.
+
+CA1 pide "crear, **editar y eliminar**" competencias. Esta tarea entrega las tres: crear vía `CompetenciaForm` en la página principal, editar vía ruta propia, eliminar vía botón con confirmación.
 
 - [ ] **Step 1: Escribir la página**
 
@@ -911,6 +915,15 @@ export default async function CompetenciasPage() {
                     {competencia.descripcion}
                   </p>
                 )}
+                <div className="mt-1 flex gap-4">
+                  <Link
+                    href={`/admin/competencias/${competencia.id}/editar`}
+                    className="font-mono text-sm uppercase tracking-wide text-musgo-oscuro underline"
+                  >
+                    Editar
+                  </Link>
+                  <EliminarCompetenciaButton id={competencia.id} />
+                </div>
                 <ValidarCompetenciaForm
                   competenciaId={competencia.id}
                   personas={personas}
@@ -925,6 +938,121 @@ export default async function CompetenciasPage() {
   );
 }
 ```
+
+Agregar también estos dos imports al principio del archivo, junto a los que el bloque ya trae:
+```tsx
+import Link from "next/link";
+import { EliminarCompetenciaButton } from "./eliminar-competencia-button";
+```
+
+- [ ] **Step 1b: Escribir el botón de eliminar**
+
+`src/app/admin/competencias/eliminar-competencia-button.tsx`:
+```tsx
+"use client";
+
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { deleteCompetencia } from "./actions";
+
+export function EliminarCompetenciaButton({ id }: { id: string }) {
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
+  return (
+    <button
+      type="button"
+      disabled={isPending}
+      onClick={() => {
+        if (
+          !window.confirm(
+            "¿Eliminar esta competencia? Se pierden también las validaciones de quienes la lograron."
+          )
+        ) {
+          return;
+        }
+        startTransition(async () => {
+          try {
+            await deleteCompetencia(id);
+            router.refresh();
+          } catch (err) {
+            window.alert(err instanceof Error ? err.message : "No se pudo eliminar.");
+          }
+        });
+      }}
+      className="font-mono text-sm uppercase tracking-wide text-terracota underline disabled:text-tinta/30 disabled:no-underline"
+    >
+      Eliminar
+    </button>
+  );
+}
+```
+
+El texto del confirm menciona explícitamente que se pierden las validaciones: `competencias_validadas.competencia_id` tiene `on delete cascade` (migración 18), así que borrar una competencia borra en silencio el expediente de todos los que la habían logrado. Quien la borra debería saberlo antes de confirmar.
+
+- [ ] **Step 1c: Escribir la página de edición**
+
+`src/app/admin/competencias/[id]/editar/page.tsx`:
+```tsx
+import { notFound, redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { CompetenciaForm } from "../../competencia-form";
+import { updateCompetencia } from "../../actions";
+
+const ROLES_QUE_GESTIONAN_COMPETENCIAS = ["profesor", "admin"];
+
+export default async function EditarCompetenciaPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.sub)
+    .single();
+
+  if (!profile || !ROLES_QUE_GESTIONAN_COMPETENCIAS.includes(profile.role)) {
+    redirect("/admin/competencias");
+  }
+
+  const { data: competencia } = await supabase
+    .from("competencias")
+    .select("id, nombre, descripcion, habilita_operar")
+    .eq("id", id)
+    .single();
+
+  if (!competencia) {
+    notFound();
+  }
+
+  const updateCompetenciaBound = updateCompetencia.bind(null, competencia.id);
+
+  return (
+    <main className="px-6 py-12">
+      <h1 className="font-serif text-2xl font-semibold">Editar competencia</h1>
+      <CompetenciaForm
+        initialValues={{
+          nombre: competencia.nombre,
+          descripcion: competencia.descripcion ?? "",
+          habilita_operar: competencia.habilita_operar,
+        }}
+        onSubmit={updateCompetenciaBound}
+      />
+    </main>
+  );
+}
+```
+
+Nota sobre un comportamiento heredado de `CompetenciaForm` (Tarea 3): tras guardar, el formulario resetea sus campos a `initialValues`. En la página de creación eso es lo deseado (vuelve a quedar en blanco); acá significa que los campos vuelven a mostrar los valores previos a la edición aunque el guardado haya sido exitoso. No es un bug de datos — el `router.refresh()` y el `revalidatePath` de la acción ya persistieron el cambio — pero es confuso. No lo arregles en esta tarea: si te molesta, reportalo como concern y que lo decida la revisión.
 
 - [ ] **Step 2: Agregar el link "Competencias" al nav**
 
@@ -953,12 +1081,12 @@ Reemplazar por (agrega "Competencias" entre "Contenidos" y "Mi perfil", visible 
 - [ ] **Step 3: Typecheck, lint y build**
 
 Run: `npm run typecheck && npm run lint && npm run build`
-Expected: los tres sin errores, y la tabla de rutas del build incluye `/admin/competencias`.
+Expected: los tres sin errores, y la tabla de rutas del build incluye tanto `/admin/competencias` como `/admin/competencias/[id]/editar`.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/app/admin/competencias/page.tsx src/app/admin/layout.tsx
+git add src/app/admin/competencias/page.tsx src/app/admin/competencias/eliminar-competencia-button.tsx "src/app/admin/competencias/[id]/editar/page.tsx" src/app/admin/layout.tsx
 git commit -m "capacitacion: agrega la página de competencias con checklist propio y catálogo"
 ```
 
@@ -1248,12 +1376,72 @@ test("un estudiante ve el catálogo pero no el formulario de crear competencias"
   await expect(page.getByRole("heading", { name: "Catálogo" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Guardar" })).toHaveCount(0);
 });
+
+test("un profesor edita una competencia del catálogo", async ({ page }) => {
+  const profesor = await createTestUser("profesor");
+  const nombreOriginal = nombreUnico("Competencia a editar");
+  const competenciaId = await crearCompetenciaDePrueba(nombreOriginal, false, profesor.id);
+  const nombreNuevo = nombreUnico("Competencia ya editada");
+
+  await page.goto(
+    `/e2e-login?email=${encodeURIComponent(profesor.email)}&password=${encodeURIComponent(profesor.password)}&next=/admin/competencias/${competenciaId}/editar`
+  );
+  await expect(page.getByRole("heading", { name: "Editar competencia" })).toBeVisible();
+
+  await page.getByLabel("Nombre").fill(nombreNuevo);
+  await page.getByLabel("Habilita operar").check();
+  await page.getByRole("button", { name: "Guardar" }).click();
+
+  // El cambio quedó persistido: se ve al volver al catálogo.
+  await page.goto("/admin/competencias");
+  await expect(page.locator("li", { hasText: nombreNuevo })).toBeVisible();
+  await expect(page.locator("li", { hasText: nombreOriginal })).toHaveCount(0);
+});
+
+test("un profesor elimina una competencia del catálogo", async ({ page }) => {
+  const profesor = await createTestUser("profesor");
+  const nombre = nombreUnico("Competencia a eliminar");
+  await crearCompetenciaDePrueba(nombre, false, profesor.id);
+
+  page.on("dialog", (dialog) => dialog.accept());
+
+  await page.goto(
+    `/e2e-login?email=${encodeURIComponent(profesor.email)}&password=${encodeURIComponent(profesor.password)}&next=/admin/competencias`
+  );
+  const item = page.locator("li", { hasText: nombre });
+  await expect(item).toBeVisible();
+
+  await item.getByRole("button", { name: "Eliminar" }).click();
+  await expect(page.locator("li", { hasText: nombre })).toHaveCount(0);
+});
+
+test("un estudiante que visita la ruta de editar es redirigido al catálogo", async ({ page }) => {
+  const profesor = await createTestUser("profesor");
+  const competenciaId = await crearCompetenciaDePrueba(
+    nombreUnico("No editable por estudiante"),
+    false,
+    profesor.id
+  );
+  const estudiante = await createTestUser("estudiante");
+
+  // Primero se entra a una página cualquiera del admin para que el login por
+  // cliente termine su redirect; recién después se navega a la ruta bajo
+  // prueba. Sin esa espera, el segundo goto sale sin sesión y el test pasaría
+  // por el motivo equivocado.
+  await page.goto(
+    `/e2e-login?email=${encodeURIComponent(estudiante.email)}&password=${encodeURIComponent(estudiante.password)}&next=/admin/competencias`
+  );
+  await expect(page.getByRole("heading", { name: "Competencias" })).toBeVisible();
+
+  await page.goto(`/admin/competencias/${competenciaId}/editar`);
+  await expect(page).toHaveURL(/\/admin\/competencias$/);
+});
 ```
 
 - [ ] **Step 2: Correr el spec nuevo en aislamiento**
 
 Run: `npx playwright test e2e/admin-competencias.spec.ts`
-Expected: los 7 tests pasan. Antes, exportar las variables en la **misma** invocación de shell que el comando de playwright:
+Expected: los 10 tests pasan. Antes, exportar las variables en la **misma** invocación de shell que el comando de playwright:
 ```bash
 npx supabase status -o env > /tmp/supabase-status.env
 export NEXT_PUBLIC_SUPABASE_URL=$(grep '^API_URL=' /tmp/supabase-status.env | cut -d '=' -f2- | tr -d '"')
@@ -1399,7 +1587,8 @@ git commit -m "test: adapta los tests de bitácora al gate de competencias"
 
 ## Self-review del plan
 
-- **Cobertura de la spec:** CA1 → Tarea 6 test 1 (crear vía UI) + Tarea 1 (policies del catálogo). CA2 → Tarea 6 test 1 (validar) y test 3 (revocar). CA3 → Tarea 6 test 6 (RLS rechaza autovalidarse) + Tarea 4 (sección "Mis competencias"). CA4 → Tarea 6 tests 2 (UI sin formulario) y 5 (RLS directo) + Tarea 2 Step 4 CASO 1. CA5 → Tarea 6 test 3 (desbloquea y vuelve a bloquear) + Tarea 2 Step 4 CASOS 3 y 4. CA6 → Tarea 6 test 4 + Tarea 2 Step 4 CASO 2. CA7 → Tarea 6 test 7.
+- **Cobertura de la spec:** CA1 → Tarea 6 tests 1 (crear), 8 (editar) y 9 (eliminar), los tres vía UI, + Tarea 1 (policies del catálogo). CA2 → Tarea 6 test 1 (validar) y test 3 (revocar). CA3 → Tarea 6 test 6 (RLS rechaza autovalidarse) + Tarea 4 (sección "Mis competencias"). CA4 → Tarea 6 tests 2 (UI sin formulario) y 5 (RLS directo) + Tarea 2 Step 4 CASO 1. CA5 → Tarea 6 test 3 (desbloquea y vuelve a bloquear) + Tarea 2 Step 4 CASOS 3 y 4. CA6 → Tarea 6 test 4 + Tarea 2 Step 4 CASO 2. CA7 → Tarea 6 tests 7 (no ve el formulario de crear) y 10 (redirigido de la ruta de editar).
+- **Corrección aplicada durante la ejecución:** la versión original de este plan solo cableaba `createCompetencia` en la Tarea 4, dejando `updateCompetencia` y `deleteCompetencia` implementadas pero muertas, y CA1 ("crear, editar y eliminar") sin cumplir. Detectado tras la revisión de la Tarea 3; el humano decidió entregar las tres operaciones. La Tarea 4 ganó el botón de eliminar y la ruta de edición, y la Tarea 6 pasó de 7 a 10 tests.
 - **Placeholders:** ninguno — cada step tiene código completo o comando con salida esperada.
 - **Consistencia de tipos:** `CompetenciaFormValues` se define en `actions.ts` (Tarea 3) y se importa con ese nombre en `competencia-form.tsx` (Tarea 3) y se construye en `page.tsx` (Tarea 4). `ValidarCompetenciaForm` recibe `{ competenciaId, personas, validadas }` en la Tarea 3 y así lo invoca la Tarea 4. `puede_registrar()` no lleva parámetros (Tarea 2) y así se llama en la Tarea 5. `listar_usuarios_aprobados()` devuelve `{ id, nombre, email, role }` y `nombres_de_usuarios(ids)` devuelve `{ id, nombre, email }` — la Tarea 4 usa cada uno con esa forma.
 - **El riesgo mayor del plan, resuelto en la Tarea 7:** dos tests de `admin-registros.spec.ts` (líneas 23 y 66) fallan legítimamente al aplicar el gate, porque ambos hacen que un estudiante registre por la UI. Verificado leyendo el archivo, no supuesto. La Tarea 6 los deja fallar a propósito y la Tarea 7 los arregla, con un arreglo distinto cada uno según lo que cada test prueba realmente — decisión tomada por el humano antes de empezar, y anotada en la propia tarea para que nadie los uniforme después.
