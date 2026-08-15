@@ -1270,14 +1270,14 @@ Dos gotchas conocidos de esta máquina: si Playwright no puede levantar el servi
 Run: `npm run lint && npm run typecheck && npm run build && npm run test && npm run test:e2e`
 Expected: todo en verde.
 
-**Atención especial a `admin-registros.spec.ts`**, que es preexistente y ejercita justamente la bitácora que esta historia endurece. **Dos de sus tests van a fallar legítimamente**, porque ambos hacen que un `estudiante` registre por la UI y con el gate nuevo ese estudiante ya no tiene permiso:
+**`admin-registros.spec.ts` va a fallar en este punto, y es lo esperado.** Dos de sus tests hacen que un `estudiante` registre por la UI, que es justo el permiso que esta historia le quita. La Tarea 7 los arregla — no los toques acá. Corré la suite, confirmá que fallan **esos dos y solo esos dos**, y reportalo:
 
 - `e2e/admin-registros.spec.ts:23` — "un estudiante registra una tarea y la ve en la bitácora sin recargar".
-- `e2e/admin-registros.spec.ts:66` — "la bitácora muestra el nombre real de cada autor, no solo el del usuario que mira": crea un `estudianteA` que registra por la UI (línea ~95).
+- `e2e/admin-registros.spec.ts:66` — "la bitácora muestra el nombre real de cada autor, no solo el del usuario que mira".
 
-Eso NO es flakiness: es la consecuencia esperada del cambio de comportamiento, y es exactamente la señal de que el gate funciona. **Reportarlo y parar.** No los arregles por tu cuenta: decidir si esos tests deben cambiar de rol (usar `operador` en vez de `estudiante`), validarle una competencia en el setup, o cambiar de expectativa, es una decisión de producto que toma el humano.
+Si falla algún otro test preexistente, eso sí amerita mirarlo: el gate solo debía afectar a `estudiante` registrando.
 
-Un tercer test, `e2e/admin-registros.spec.ts:113` ("un usuario no puede registrar una tarea a nombre de otro, RLS lo rechaza"), va a seguir pasando — pero ahora por dos razones en vez de una (el `user_id` ajeno *y* la falta de competencia), lo cual lo vuelve menos preciso como prueba de lo que dice probar. Mencionalo en el reporte; no lo toques.
+Nota aparte sobre flakiness real: bajo ejecución paralela completa esta máquina produce timeouts intermitentes en tests de mutación de varios specs preexistentes (contención de CPU). Si aparece uno, reportar qué spec, qué test, en cuántas corridas de cuántas, y si se reproduce en aislamiento.
 
 Nota aparte sobre flakiness real: bajo ejecución paralela completa esta máquina produce timeouts intermitentes en tests de mutación de varios specs preexistentes (contención de CPU). Si aparece uno, reportar qué spec, qué test, en cuántas corridas de cuántas, y si se reproduce en aislamiento.
 
@@ -1290,10 +1290,118 @@ git commit -m "test: agrega E2E del checklist de competencias y del gate de la b
 
 ---
 
+### Task 7: Adaptar los dos tests preexistentes que el gate rompe
+
+**Files:**
+- Modify: `e2e/admin-registros.spec.ts`
+
+**Interfaces:**
+- Consumes: tablas `competencias` y `competencias_validadas` (Tarea 1); el gate de la Tarea 2; `createTestUser` de `./fixtures/test-users` (ya existe).
+- Produces: nada que otras tareas consuman. Es la última tarea del plan.
+
+Los dos tests fallan por la misma causa pero prueban cosas distintas, así que llevan arreglos distintos. Esa asimetría fue una decisión explícita del humano, no un descuido: **no los uniformes.**
+
+- [ ] **Step 1: Confirmar el estado de partida**
+
+Run: `npx playwright test e2e/admin-registros.spec.ts --workers=1 --reporter=list`
+Expected: 3 pasan y 2 fallan — exactamente los de las líneas 23 y 66. Pegar la salida cruda en el reporte. Si falla algún otro, parar y reportar: el gate solo debía afectar a `estudiante` registrando.
+
+- [ ] **Step 2: Arreglar el test de la línea 23 — validarle una competencia al estudiante**
+
+Este test se llama "un estudiante registra una tarea…" y su tema *es* el flujo de registrar. Después de esta historia un estudiante sí puede registrar — con una competencia validada. Mantener el rol y agregar la validación hace que el test conserve su nombre y además documente la regla nueva.
+
+Agregar este helper junto a `crearLoteDePrueba`, cerca del inicio del archivo:
+
+```ts
+async function habilitarParaOperar(userId: string): Promise<void> {
+  const db = new Client({ connectionString: DB_URL });
+  await db.connect();
+  try {
+    // El gate de la historia 27 exige que un estudiante tenga al menos una
+    // competencia habilitante validada para registrar en bitácora. Se crea
+    // una por test para no depender del catálogo real ni de otros tests.
+    const profesor = await db.query(
+      "insert into auth.users (id, email) values (gen_random_uuid(), $1) returning id",
+      [`validador-${randomUUID()}@bichongos.test`]
+    );
+    const profesorId = profesor.rows[0].id as string;
+    await db.query("set session_replication_role = replica");
+    await db.query("update public.profiles set role = 'profesor' where id = $1", [profesorId]);
+    await db.query("set session_replication_role = default");
+
+    const competencia = await db.query(
+      "insert into public.competencias (nombre, habilita_operar, created_by) values ($1, true, $2) returning id",
+      [`Opera cultivo ${randomUUID().slice(0, 8)}`, profesorId]
+    );
+    await db.query(
+      "insert into public.competencias_validadas (competencia_id, user_id, validado_por) values ($1, $2, $3)",
+      [competencia.rows[0].id, userId, profesorId]
+    );
+  } finally {
+    await db.end();
+  }
+}
+```
+
+Agregar el import de `randomUUID` al principio del archivo si no está:
+```ts
+import { randomUUID } from "node:crypto";
+```
+
+Y en el test de la línea 23, insertar la llamada justo después de crear el estudiante:
+```ts
+  const estudiante = await createTestUser("estudiante");
+  await habilitarParaOperar(estudiante.id);
+```
+
+- [ ] **Step 3: Arreglar el test de la línea 66 — cambiar el rol a operador**
+
+Este test va de que `nombres_de_usuarios` resuelva nombres reales para un espectador que no es admin. El rol de quien registra es incidental: lo único que importa es que el espectador no sea admin, y `operador` cumple eso igual que `estudiante`. Acoplar este test a las tablas de competencias agregaría ruido a algo que va de otra cosa.
+
+Reemplazar:
+```ts
+  const estudianteA = await createTestUser("estudiante");
+  const operadorB = await createTestUser("operador");
+```
+por:
+```ts
+  // operador y no estudiante: este test va de resolución de nombres para un
+  // espectador no-admin, y el rol de quien registra es incidental. Usar
+  // operador lo mantiene independiente del gate de competencias (historia 27).
+  const operadorA = await createTestUser("operador");
+  const operadorB = await createTestUser("operador");
+```
+
+Después renombrar **todas** las apariciones restantes de `estudianteA` a `operadorA` dentro de ese test — están en la URL de `/e2e-login` (dos veces: `.email` y `.password`) y en la aserción final `toContainText(estudianteA.email)`. Verificar con:
+```bash
+grep -n "estudianteA" e2e/admin-registros.spec.ts
+```
+Expected después del cambio: sin resultados dentro de ese test. Ojo, `estudianteA` también aparece en el test de la línea 113 (el de RLS por suplantación) — **ese no se toca**, sigue usando estudiantes.
+
+- [ ] **Step 4: Correr el spec y confirmar que los 5 pasan**
+
+Run: `npx playwright test e2e/admin-registros.spec.ts --workers=1 --reporter=list`
+Expected: 5 passed. Pegar la salida cruda en el reporte.
+
+- [ ] **Step 5: Correr la suite completa**
+
+Run: `npm run lint && npm run typecheck && npm run build && npm run test && npm run test:e2e`
+Expected: todo en verde, salvo la flakiness conocida por contención bajo 5 workers (reportar cuál, en cuántas corridas, y si se reproduce en aislamiento).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add e2e/admin-registros.spec.ts
+git commit -m "test: adapta los tests de bitácora al gate de competencias"
+```
+
+---
+
 ## Self-review del plan
 
 - **Cobertura de la spec:** CA1 → Tarea 6 test 1 (crear vía UI) + Tarea 1 (policies del catálogo). CA2 → Tarea 6 test 1 (validar) y test 3 (revocar). CA3 → Tarea 6 test 6 (RLS rechaza autovalidarse) + Tarea 4 (sección "Mis competencias"). CA4 → Tarea 6 tests 2 (UI sin formulario) y 5 (RLS directo) + Tarea 2 Step 4 CASO 1. CA5 → Tarea 6 test 3 (desbloquea y vuelve a bloquear) + Tarea 2 Step 4 CASOS 3 y 4. CA6 → Tarea 6 test 4 + Tarea 2 Step 4 CASO 2. CA7 → Tarea 6 test 7.
 - **Placeholders:** ninguno — cada step tiene código completo o comando con salida esperada.
 - **Consistencia de tipos:** `CompetenciaFormValues` se define en `actions.ts` (Tarea 3) y se importa con ese nombre en `competencia-form.tsx` (Tarea 3) y se construye en `page.tsx` (Tarea 4). `ValidarCompetenciaForm` recibe `{ competenciaId, personas, validadas }` en la Tarea 3 y así lo invoca la Tarea 4. `puede_registrar()` no lleva parámetros (Tarea 2) y así se llama en la Tarea 5. `listar_usuarios_aprobados()` devuelve `{ id, nombre, email, role }` y `nombres_de_usuarios(ids)` devuelve `{ id, nombre, email }` — la Tarea 4 usa cada uno con esa forma.
-- **El riesgo mayor del plan, señalado donde corresponde:** la Tarea 6 Step 3 advierte que **dos** tests de `admin-registros.spec.ts` (líneas 23 y 66) van a fallar legítimamente, porque ambos hacen que un estudiante registre por la UI y esta historia le quita ese permiso. Verificado leyendo el archivo, no supuesto. Está marcado como decisión de producto y no de implementación, para que nadie lo "arregle" en silencio cambiando el rol del fixture.
-- **Un efecto de segundo orden, también anotado:** el test de la línea 113 sigue pasando pero deja de ser preciso, porque ahora hay dos motivos por los que el insert falla en vez de uno. No es un fallo, es una pérdida de poder diagnóstico — vale registrarla sin actuar sobre ella en esta rama.
+- **El riesgo mayor del plan, resuelto en la Tarea 7:** dos tests de `admin-registros.spec.ts` (líneas 23 y 66) fallan legítimamente al aplicar el gate, porque ambos hacen que un estudiante registre por la UI. Verificado leyendo el archivo, no supuesto. La Tarea 6 los deja fallar a propósito y la Tarea 7 los arregla, con un arreglo distinto cada uno según lo que cada test prueba realmente — decisión tomada por el humano antes de empezar, y anotada en la propia tarea para que nadie los uniforme después.
+- **Un efecto de segundo orden que el plan NO corrige:** el test de la línea 113 ("un usuario no puede registrar a nombre de otro") sigue pasando, pero ahora hay dos motivos por los que el insert falla — el `user_id` ajeno *y* la falta de competencia — así que deja de aislar lo que dice probar. No es un fallo y no justifica tocarlo en esta rama; queda como observación para la revisión final, que puede decidir si vale habilitar a ese estudiante en el setup para que el test vuelva a probar una sola cosa.
+- **Orden de las tareas 6 y 7:** podrían fusionarse, pero están separadas a propósito. La 6 deja evidencia registrada de que el gate efectivamente rompe lo que debía romper — si se arreglaran los tests en el mismo paso, esa prueba de que el cambio de comportamiento ocurrió se perdería.
