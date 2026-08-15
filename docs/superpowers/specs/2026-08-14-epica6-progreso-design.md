@@ -147,3 +147,7 @@ Ambas revalidan `/admin/contenidos` y `/admin/contenidos/[id]`. Siguiendo el pre
 - Notificaciones, recordatorios o reportes automáticos de avance.
 - Medición automática de lectura (tiempo en página, scroll) — el modelo es autodeclaración explícita.
 - Progreso sobre algo que no sean contenidos (lotes, tareas asignadas).
+
+## Nota para la historia 27
+
+El `grant insert` de `lecturas` es a nivel de tabla, sin restricción de columna y sin trigger que fije `created_at` en el servidor — quien marca una lectura puede enviar su propio `created_at` en el INSERT. Esto sigue el mismo patrón que ya existe en el resto del repo (`registros`, `tareas_asignadas`, `contenidos` comparten esta característica), así que **no es un defecto de esta historia**. Pero la historia 27 (checklist de competencias / gating de acceso real) planea apoyarse en «qué leyó cada quien y cuándo» para decidir si alguien puede operar — y en ese momento `created_at` deja de ser un dato informativo y pasa a ser evidencia con peso de decisión. Antes de usarlo así, hay que endurecerlo (por ejemplo, con un trigger `before insert` que fuerce `created_at = now()` ignorando lo que mande el cliente).
