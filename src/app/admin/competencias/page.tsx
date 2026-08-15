@@ -59,9 +59,8 @@ export default async function CompetenciasPage() {
   };
 
   const miaPorCompetencia = new Map(mias.map((v) => [v.competencia_id, v]));
-  const tengoHabilitante = (competencias ?? []).some(
-    (c) => c.habilita_operar && miaPorCompetencia.has(c.id)
-  );
+
+  const { data: puedeRegistrar } = await supabase.rpc("puede_registrar");
 
   let personas: Persona[] = [];
   if (canEdit) {
@@ -80,7 +79,7 @@ export default async function CompetenciasPage() {
 
       <section className="mt-8">
         <h2 className="font-serif text-xl font-semibold">Mis competencias</h2>
-        {!tengoHabilitante && (
+        {!puedeRegistrar && (
           <p className="mt-2 max-w-xl font-mono text-sm text-terracota">
             Todavía no tenés ninguna competencia que habilite operar, así que no podés
             registrar tareas en la bitácora de un lote. Un profesor tiene que validártela.
