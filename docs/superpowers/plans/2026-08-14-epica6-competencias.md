@@ -1478,21 +1478,24 @@ git commit -m "test: agrega E2E del checklist de competencias y del gate de la b
 
 ---
 
-### Task 7: Adaptar los dos tests preexistentes que el gate rompe
+### Task 7: Adaptar los cinco tests preexistentes que el gate rompe
 
 **Files:**
 - Modify: `e2e/admin-registros.spec.ts`
+- Modify: `e2e/admin-tareas.spec.ts`
 
 **Interfaces:**
 - Consumes: tablas `competencias` y `competencias_validadas` (Tarea 1); el gate de la Tarea 2; `createTestUser` de `./fixtures/test-users` (ya existe).
 - Produces: nada que otras tareas consuman. Es la última tarea del plan.
 
-Los dos tests fallan por la misma causa pero prueban cosas distintas, así que llevan arreglos distintos. Esa asimetría fue una decisión explícita del humano, no un descuido: **no los uniformes.**
+Son **cinco** tests rotos, no dos. El plan original solo listaba los dos de `admin-registros.spec.ts`; el implementador de la Tarea 6 encontró tres más en `e2e/admin-tareas.spec.ts` (líneas 130, 148 y 166) y el controller los verificó leyendo el archivo. Todos fallan por la misma causa — un `estudiante` registrando por la UI — pero prueban cosas distintas, así que llevan arreglos distintos. Esa asimetría fue una decisión explícita del humano, no un descuido: **no los uniformes.**
+
+El helper `habilitarParaOperar` se copia entero en cada uno de los dos archivos, en vez de extraerlo a un módulo compartido. Es la convención de helper-por-archivo que usa todo spec del repo (`crearLoteDePrueba` está duplicado hoy en tres archivos): cada spec se lee y se corre solo.
 
 - [ ] **Step 1: Confirmar el estado de partida**
 
-Run: `npx playwright test e2e/admin-registros.spec.ts --workers=1 --reporter=list`
-Expected: 3 pasan y 2 fallan — exactamente los de las líneas 23 y 66. Pegar la salida cruda en el reporte. Si falla algún otro, parar y reportar: el gate solo debía afectar a `estudiante` registrando.
+Run: `npx playwright test e2e/admin-registros.spec.ts e2e/admin-tareas.spec.ts --workers=1 --reporter=list`
+Expected: fallan exactamente 5 — los de `admin-registros.spec.ts` líneas 23 y 66, y los de `admin-tareas.spec.ts` líneas 130, 148 y 166. Pegar la salida cruda en el reporte. Si falla algún otro, parar y reportar: el gate solo debía afectar a `estudiante` registrando.
 
 - [ ] **Step 2: Arreglar el test de la línea 23 — validarle una competencia al estudiante**
 
@@ -1566,21 +1569,84 @@ grep -n "estudianteA" e2e/admin-registros.spec.ts
 ```
 Expected después del cambio: sin resultados dentro de ese test. Ojo, `estudianteA` también aparece en el test de la línea 113 (el de RLS por suplantación) — **ese no se toca**, sigue usando estudiantes.
 
-- [ ] **Step 4: Correr el spec y confirmar que los 5 pasan**
+- [ ] **Step 4: Correr admin-registros y confirmar que los 5 pasan**
 
 Run: `npx playwright test e2e/admin-registros.spec.ts --workers=1 --reporter=list`
 Expected: 5 passed. Pegar la salida cruda en el reporte.
 
-- [ ] **Step 5: Correr la suite completa**
+- [ ] **Step 5: Copiar el helper a `admin-tareas.spec.ts`**
+
+Los tres tests rotos acá son los de autocompletado de la Épica 5, y **el rol `estudiante` no es incidental**: el trigger que completa la tarea empareja `tareas_asignadas.asignado_a` con el `user_id` de quien registra, y las tareas se asignan a estudiantes. Cambiar el rol a `operador` haría pasar los tests probando un escenario que no es el real. Por eso acá el arreglo es habilitar al estudiante, no cambiarle el rol.
+
+Agregar el import de `randomUUID` al principio del archivo:
+```ts
+import { randomUUID } from "node:crypto";
+```
+
+Y copiar `habilitarParaOperar` textualmente — el mismo cuerpo del Step 2, sin cambios — junto a `crearLoteDePrueba`:
+
+```ts
+async function habilitarParaOperar(userId: string): Promise<void> {
+  const db = new Client({ connectionString: DB_URL });
+  await db.connect();
+  try {
+    // El gate de la historia 27 exige que un estudiante tenga al menos una
+    // competencia habilitante validada para registrar en bitácora. Se crea
+    // una por test para no depender del catálogo real ni de otros tests.
+    const profesor = await db.query(
+      "insert into auth.users (id, email) values (gen_random_uuid(), $1) returning id",
+      [`validador-${randomUUID()}@bichongos.test`]
+    );
+    const profesorId = profesor.rows[0].id as string;
+    await db.query("set session_replication_role = replica");
+    await db.query("update public.profiles set role = 'profesor' where id = $1", [profesorId]);
+    await db.query("set session_replication_role = default");
+
+    const competencia = await db.query(
+      "insert into public.competencias (nombre, habilita_operar, created_by) values ($1, true, $2) returning id",
+      [`Opera cultivo ${randomUUID().slice(0, 8)}`, profesorId]
+    );
+    await db.query(
+      "insert into public.competencias_validadas (competencia_id, user_id, validado_por) values ($1, $2, $3)",
+      [competencia.rows[0].id, userId, profesorId]
+    );
+  } finally {
+    await db.end();
+  }
+}
+```
+
+- [ ] **Step 6: Habilitar al estudiante que registra en cada uno de los tres tests**
+
+Habilitar **solo a quien registra**, no a todos los estudiantes del test. En los dos primeros es el mismo estudiante asignado; en el tercero es deliberadamente otra persona, y el estudiante asignado debe quedarse sin habilitar porque ese test no lo hace registrar nada.
+
+En "registrar la tarea correcta la completa automáticamente" (línea ~130) y en "registrar un tipo distinto no completa la tarea asignada" (línea ~148), después de `asignarTareaDirecto(...)`:
+```ts
+  await habilitarParaOperar(estudiante.id);
+```
+
+En "si otra persona registra la tarea, la tarea asignada no se completa (CA6)" (línea ~166), después de `asignarTareaDirecto(...)`:
+```ts
+  // Solo otraPersona registra en este test; estudianteAsignado no necesita
+  // la competencia porque nunca toca el formulario.
+  await habilitarParaOperar(otraPersona.id);
+```
+
+- [ ] **Step 7: Correr admin-tareas y confirmar que pasa entero**
+
+Run: `npx playwright test e2e/admin-tareas.spec.ts --workers=1 --reporter=list`
+Expected: todos pasan (los 3 arreglados y los que ya pasaban). Pegar la salida cruda en el reporte.
+
+- [ ] **Step 8: Correr la suite completa**
 
 Run: `npm run lint && npm run typecheck && npm run build && npm run test && npm run test:e2e`
 Expected: todo en verde, salvo la flakiness conocida por contención bajo 5 workers (reportar cuál, en cuántas corridas, y si se reproduce en aislamiento).
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add e2e/admin-registros.spec.ts
-git commit -m "test: adapta los tests de bitácora al gate de competencias"
+git add e2e/admin-registros.spec.ts e2e/admin-tareas.spec.ts
+git commit -m "test: adapta los tests de bitácora y tareas al gate de competencias"
 ```
 
 ---
@@ -1591,6 +1657,7 @@ git commit -m "test: adapta los tests de bitácora al gate de competencias"
 - **Corrección aplicada durante la ejecución:** la versión original de este plan solo cableaba `createCompetencia` en la Tarea 4, dejando `updateCompetencia` y `deleteCompetencia` implementadas pero muertas, y CA1 ("crear, editar y eliminar") sin cumplir. Detectado tras la revisión de la Tarea 3; el humano decidió entregar las tres operaciones. La Tarea 4 ganó el botón de eliminar y la ruta de edición, y la Tarea 6 pasó de 7 a 10 tests.
 - **Placeholders:** ninguno — cada step tiene código completo o comando con salida esperada.
 - **Consistencia de tipos:** `CompetenciaFormValues` se define en `actions.ts` (Tarea 3) y se importa con ese nombre en `competencia-form.tsx` (Tarea 3) y se construye en `page.tsx` (Tarea 4). `ValidarCompetenciaForm` recibe `{ competenciaId, personas, validadas }` en la Tarea 3 y así lo invoca la Tarea 4. `puede_registrar()` no lleva parámetros (Tarea 2) y así se llama en la Tarea 5. `listar_usuarios_aprobados()` devuelve `{ id, nombre, email, role }` y `nombres_de_usuarios(ids)` devuelve `{ id, nombre, email }` — la Tarea 4 usa cada uno con esa forma.
-- **El riesgo mayor del plan, resuelto en la Tarea 7:** dos tests de `admin-registros.spec.ts` (líneas 23 y 66) fallan legítimamente al aplicar el gate, porque ambos hacen que un estudiante registre por la UI. Verificado leyendo el archivo, no supuesto. La Tarea 6 los deja fallar a propósito y la Tarea 7 los arregla, con un arreglo distinto cada uno según lo que cada test prueba realmente — decisión tomada por el humano antes de empezar, y anotada en la propia tarea para que nadie los uniforme después.
+- **El riesgo mayor del plan, resuelto en la Tarea 7:** varios tests preexistentes fallan legítimamente al aplicar el gate, porque hacen que un estudiante registre por la UI. La Tarea 6 los deja fallar a propósito y la Tarea 7 los arregla, con un arreglo distinto cada uno según lo que cada test prueba realmente — decisión tomada por el humano, anotada en la propia tarea para que nadie los uniforme después.
+- **Defecto de este plan, corregido durante la ejecución:** al escribirlo revisé `admin-registros.spec.ts` pero no `admin-tareas.spec.ts`, así que la lista de tests rotos decía 2 cuando eran 5. Los tres faltantes (`admin-tareas.spec.ts` líneas 130, 148 y 166) los encontró el implementador de la Tarea 6 y los verificó el controller. La Tarea 7 se amplió para cubrirlos. La lección: la lista de tests que un cambio de policy rompe hay que derivarla de *qué rol escribe en la tabla afectada*, en todos los specs, no del archivo cuyo nombre coincide con la tabla.
 - **Un efecto de segundo orden que el plan NO corrige:** el test de la línea 113 ("un usuario no puede registrar a nombre de otro") sigue pasando, pero ahora hay dos motivos por los que el insert falla — el `user_id` ajeno *y* la falta de competencia — así que deja de aislar lo que dice probar. No es un fallo y no justifica tocarlo en esta rama; queda como observación para la revisión final, que puede decidir si vale habilitar a ese estudiante en el setup para que el test vuelva a probar una sola cosa.
 - **Orden de las tareas 6 y 7:** podrían fusionarse, pero están separadas a propósito. La 6 deja evidencia registrada de que el gate efectivamente rompe lo que debía romper — si se arreglaran los tests en el mismo paso, esa prueba de que el cambio de comportamiento ocurrió se perdería.
