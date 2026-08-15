@@ -3,8 +3,17 @@ import { Client } from "pg";
 const DB_URL =
   process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
-/** Los usuarios de prueba son los que crea `createTestUser` en test-users.ts. */
-const EMAIL_DE_PRUEBA = "e2e-%@bichongos.test";
+/**
+ * Todo usuario creado por la suite vive en el dominio `bichongos.test`.
+ *
+ * El patrón cubre el dominio entero y no solo el prefijo `e2e-` de
+ * `createTestUser`: varios specs crean usuarios auxiliares con otros prefijos
+ * —`validador-…`, por ejemplo, en el helper `habilitarParaOperar`— y con un
+ * patrón más estrecho se quedaban acumulando sin que nadie los viera. El TLD
+ * `.test` está reservado por RFC 2606 justamente para esto, así que ningún
+ * usuario real puede caer en este filtro.
+ */
+const EMAIL_DE_PRUEBA = "%@bichongos.test";
 
 /**
  * Borra todo lo que dejó la corrida de tests.
