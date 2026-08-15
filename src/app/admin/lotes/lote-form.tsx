@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { LoteEstado, LoteFormValues } from "./actions";
 
@@ -17,6 +17,7 @@ export function LoteForm({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const id = useId();
 
   return (
     <form
@@ -34,45 +35,50 @@ export function LoteForm({
         });
       }}
     >
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Nombre
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-nombre`}>Nombre</label>
         <input
+          id={`${id}-nombre`}
           required
           value={values.nombre}
           onChange={(e) => setValues({ ...values, nombre: e.target.value })}
           className="border border-tinta/20 bg-transparent px-2 py-1"
         />
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Especie
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-especie`}>Especie</label>
         <input
+          id={`${id}-especie`}
           required
           value={values.especie}
           onChange={(e) => setValues({ ...values, especie: e.target.value })}
           className="border border-tinta/20 bg-transparent px-2 py-1"
         />
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Sustrato
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-sustrato`}>Sustrato</label>
         <input
+          id={`${id}-sustrato`}
           value={values.sustrato}
           onChange={(e) => setValues({ ...values, sustrato: e.target.value })}
           className="border border-tinta/20 bg-transparent px-2 py-1"
         />
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Fecha de inicio
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-fecha-inicio`}>Fecha de inicio</label>
         <input
+          id={`${id}-fecha-inicio`}
           type="date"
           required
           value={values.fecha_inicio}
           onChange={(e) => setValues({ ...values, fecha_inicio: e.target.value })}
           className="border border-tinta/20 bg-transparent px-2 py-1"
         />
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Estado
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-estado`}>Estado</label>
         <select
+          id={`${id}-estado`}
           value={values.estado}
           onChange={(e) => setValues({ ...values, estado: e.target.value as LoteEstado })}
           className="border border-tinta/20 bg-transparent px-2 py-1"
@@ -83,15 +89,16 @@ export function LoteForm({
             </option>
           ))}
         </select>
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Notas
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-notas`}>Notas</label>
         <textarea
+          id={`${id}-notas`}
           value={values.notas}
           onChange={(e) => setValues({ ...values, notas: e.target.value })}
           className="border border-tinta/20 bg-transparent px-2 py-1"
         />
-      </label>
+      </div>
       <button
         type="submit"
         disabled={isPending}

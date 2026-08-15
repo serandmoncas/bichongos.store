@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { CompetenciaFormValues } from "./actions";
 
@@ -17,6 +17,7 @@ export function CompetenciaForm({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const id = useId();
 
   return (
     <form
@@ -39,31 +40,34 @@ export function CompetenciaForm({
         });
       }}
     >
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Nombre
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-nombre`}>Nombre</label>
         <input
+          id={`${id}-nombre`}
           required
           value={values.nombre}
           onChange={(e) => setValues({ ...values, nombre: e.target.value })}
           className="border border-tinta/20 bg-transparent px-2 py-1"
         />
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Descripción
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-descripcion`}>Descripción</label>
         <textarea
+          id={`${id}-descripcion`}
           value={values.descripcion}
           onChange={(e) => setValues({ ...values, descripcion: e.target.value })}
           className="border border-tinta/20 bg-transparent px-2 py-1"
         />
-      </label>
-      <label className="flex items-center gap-2 font-mono text-sm text-tinta/70">
+      </div>
+      <div className="flex items-center gap-2 font-mono text-sm text-tinta/70">
         <input
+          id={`${id}-habilita-operar`}
           type="checkbox"
           checked={values.habilita_operar}
           onChange={(e) => setValues({ ...values, habilita_operar: e.target.checked })}
         />
-        Habilita operar
-      </label>
+        <label htmlFor={`${id}-habilita-operar`}>Habilita operar</label>
+      </div>
       <button
         type="submit"
         disabled={isPending}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createRegistro, type RegistroTipo } from "../registros-actions";
 
@@ -17,6 +17,7 @@ export function RegistroForm({ loteId }: { loteId: string }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const id = useId();
 
   const trimmed = valor.trim();
 
@@ -38,9 +39,10 @@ export function RegistroForm({ loteId }: { loteId: string }) {
         });
       }}
     >
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Tipo
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-tipo`}>Tipo</label>
         <select
+          id={`${id}-tipo`}
           value={tipo}
           onChange={(e) => setTipo(e.target.value as RegistroTipo)}
           className="border border-tinta/20 bg-transparent px-2 py-1"
@@ -51,15 +53,16 @@ export function RegistroForm({ loteId }: { loteId: string }) {
             </option>
           ))}
         </select>
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Valor
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-valor`}>Valor</label>
         <input
+          id={`${id}-valor`}
           value={valor}
           onChange={(e) => setValor(e.target.value)}
           className="border border-tinta/20 bg-transparent px-2 py-1"
         />
-      </label>
+      </div>
       <button
         type="submit"
         disabled={!trimmed || isPending}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { asignarTarea } from "./actions";
 import type { RegistroTipo } from "../lotes/registros-actions";
@@ -25,6 +25,13 @@ export function AsignarTareaForm({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  // Los ids se asocian con htmlFor en vez de envolver el control en el
+  // <label>. Envolviéndolo, el nombre accesible del <select> incluye el texto
+  // de todas sus <option>, así que un lote llamado "…otra persona registra"
+  // hacía que el select de Lote se llamara "LoteLote otra persona registra…"
+  // y colisionara con la etiqueta "Persona". useId garantiza que los ids sean
+  // únicos aunque el formulario se renderice más de una vez en la página.
+  const id = useId();
 
   if (lotes.length === 0 || personas.length === 0) {
     return null;
@@ -46,9 +53,10 @@ export function AsignarTareaForm({
         });
       }}
     >
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Lote
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-lote`}>Lote</label>
         <select
+          id={`${id}-lote`}
           value={loteId}
           onChange={(e) => setLoteId(e.target.value)}
           className="border border-tinta/20 bg-transparent px-2 py-1"
@@ -59,10 +67,11 @@ export function AsignarTareaForm({
             </option>
           ))}
         </select>
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Persona
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-persona`}>Persona</label>
         <select
+          id={`${id}-persona`}
           value={asignadoA}
           onChange={(e) => setAsignadoA(e.target.value)}
           className="border border-tinta/20 bg-transparent px-2 py-1"
@@ -73,10 +82,11 @@ export function AsignarTareaForm({
             </option>
           ))}
         </select>
-      </label>
-      <label className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
-        Tipo
+      </div>
+      <div className="flex flex-col gap-1 font-mono text-sm text-tinta/70">
+        <label htmlFor={`${id}-tipo`}>Tipo</label>
         <select
+          id={`${id}-tipo`}
           value={tipo}
           onChange={(e) => setTipo(e.target.value as RegistroTipo)}
           className="border border-tinta/20 bg-transparent px-2 py-1"
@@ -87,7 +97,7 @@ export function AsignarTareaForm({
             </option>
           ))}
         </select>
-      </label>
+      </div>
       <button
         type="submit"
         disabled={isPending}
