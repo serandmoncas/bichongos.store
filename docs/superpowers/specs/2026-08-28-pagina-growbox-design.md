@@ -79,6 +79,13 @@ se llega desde la landing, y se ve igual que el artefacto original.
 | Ejecución real | ✅ Revisada en pantalla a 1280 px y a 390 px, y comprobada la pestaña de la app |
 | Fuga de CSS | ✅ El `body` de la landing conserva su tipografía y su fondo |
 
+### En producción (2026-08-28)
+
+Desplegada con el merge `291e1d4`. Comprobado sobre `bichongos.store`, no sobre
+local: `/growbox` responde 200 con su `<title>` y su titular, la landing enlaza a
+la página, las imágenes se sirven, y la landing conserva su identidad — el CSS
+tampoco se filtra en producción.
+
 ## Gotchas encontrados
 
 - **El puerto 3000 puede estar ocupado por otra cosa.** En la máquina de
