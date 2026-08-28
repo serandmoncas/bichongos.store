@@ -1,5 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// El puerto es configurable porque el 3000 puede estar ocupado por otra cosa
+// en la máquina de quien corre los tests. Con reuseExistingServer, Playwright
+// reutilizaría ese servidor ajeno y los tests fallarían con errores confusos
+// ("Cannot GET /...") en vez de decir que el puerto no era el nuestro.
+const PORT = process.env.PORT ?? "3000";
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -12,12 +18,12 @@ export default defineConfig({
   // timeout. Ver e2e/fixtures/teardown.ts.
   globalTeardown: "./e2e/fixtures/teardown.ts",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: `http://127.0.0.1:${PORT}`,
     trace: "on-first-retry",
   },
   webServer: {
-    command: "npm run build && npm run start",
-    url: "http://127.0.0.1:3000",
+    command: `npm run build && npm run start -- -p ${PORT}`,
+    url: `http://127.0.0.1:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {

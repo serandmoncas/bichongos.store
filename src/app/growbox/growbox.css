@@ -1,0 +1,586 @@
+/*
+ * Estilos de la página /growbox.
+ *
+ * Todo cuelga de `.growbox` a propósito: el diseño original definía sus tokens
+ * en :root y estilizaba body, lo que se filtraría al resto de bichongos.store y
+ * rompería la landing. Encapsulado aquí, convive sin tocar nada de fuera.
+ *
+ * El diseño original traía modo oscuro automático. Se omite: el sitio no tiene
+ * modo oscuro, y una página oscura sobre un footer claro se ve rota.
+ */
+
+.growbox {
+  --ground: #f1f4f1;
+  --surface: #ffffff;
+  --sunk: #e4eae5;
+  --ink: #141b17;
+  --muted: #5a6b60;
+  --line: #cbd6ce;
+  --coral: #c9432f;
+  --mint: #0e7a66;
+  --shadow: 0 1px 2px rgba(20, 27, 23, 0.06), 0 8px 24px rgba(20, 27, 23, 0.06);
+
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-karla), "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.growbox *,
+.growbox *::before,
+.growbox *::after {
+  box-sizing: border-box;
+}
+
+.growbox .wrap {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding-inline: 28px;
+}
+.growbox .measure {
+  max-width: 62ch;
+}
+
+.growbox h1,
+.growbox h2,
+.growbox h3 {
+  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  text-wrap: balance;
+  line-height: 1.12;
+  margin: 0;
+}
+.growbox h1 {
+  font-size: clamp(2.6rem, 6.5vw, 4.6rem);
+  letter-spacing: -0.015em;
+}
+.growbox h2 {
+  font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+  letter-spacing: -0.01em;
+}
+.growbox h3 {
+  font-size: 1.18rem;
+  line-height: 1.3;
+}
+.growbox p {
+  margin: 0;
+}
+.growbox strong {
+  font-weight: 700;
+}
+.growbox code {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.92em;
+}
+
+.growbox .eyebrow {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── hero ─────────────────────────────────────────────── */
+.growbox .hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+}
+.growbox .hero-img {
+  display: block;
+  width: 100%;
+  height: clamp(260px, 38vw, 460px);
+  object-fit: cover;
+  object-position: 78% center;
+}
+.growbox .hero-body {
+  position: relative;
+  background: var(--ground);
+  padding-block: 44px 56px;
+}
+.growbox .hero-body h1 {
+  margin-bottom: 20px;
+}
+.growbox .lede {
+  font-size: clamp(1.12rem, 2.1vw, 1.35rem);
+  color: var(--muted);
+  max-width: 56ch;
+}
+.growbox .hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 26px;
+  margin-top: 28px;
+}
+.growbox .hero-meta span {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.growbox .hero-meta b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* ── secciones ────────────────────────────────────────── */
+.growbox section {
+  padding: clamp(56px, 7vw, 92px) 0;
+}
+.growbox .sec-head {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 30px;
+}
+.growbox .stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.growbox .split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 38px;
+  align-items: center;
+}
+@media (min-width: 880px) {
+  .growbox .split {
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 56px;
+  }
+  .growbox .split.flip > figure {
+    order: -1;
+  }
+}
+.growbox figure {
+  margin: 0;
+}
+.growbox figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 3px;
+  box-shadow: var(--shadow);
+}
+.growbox figcaption {
+  margin-top: 12px;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+}
+
+/* ── fases ────────────────────────────────────────────── */
+.growbox .phases {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+@media (min-width: 760px) {
+  .growbox .phases {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.growbox .phase {
+  background: var(--surface);
+  padding: 26px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.growbox .phase .n {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--coral);
+  letter-spacing: 0.14em;
+}
+.growbox .phase p {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+.growbox .phase dl {
+  display: flex;
+  gap: 20px;
+  margin: 6px 0 0;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+.growbox .phase dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.growbox .phase dd {
+  margin: 2px 0 0;
+  color: var(--ink);
+}
+
+/* ── instrumento (datos medidos) ──────────────────────── */
+.growbox .instrument {
+  background: var(--sunk);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.growbox .readout {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 28px;
+}
+@media (min-width: 720px) {
+  .growbox .readout {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.growbox .cell {
+  background: var(--ground);
+  padding: 22px 20px;
+}
+.growbox .cell .k {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.growbox .cell .v {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: clamp(1.5rem, 3.4vw, 2rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--mint);
+  margin-top: 8px;
+  line-height: 1;
+}
+.growbox .cell .u {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.growbox .live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+.growbox .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mint);
+  animation: growbox-pulse 2.4s ease-in-out infinite;
+}
+@keyframes growbox-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .growbox .dot {
+    animation: none;
+  }
+}
+
+/* ── estado honesto ───────────────────────────────────── */
+.growbox .state {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 26px;
+}
+@media (min-width: 700px) {
+  .growbox .state {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.growbox .state > div {
+  background: var(--surface);
+  padding: 26px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.growbox .state h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.growbox .tick {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.9rem;
+}
+.growbox .yes .tick {
+  color: var(--mint);
+}
+.growbox .no .tick {
+  color: var(--coral);
+}
+.growbox .state ul {
+  margin: 0;
+  padding-left: 1.1em;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.growbox .state li {
+  margin-bottom: 7px;
+}
+
+/* ── cierre ───────────────────────────────────────────── */
+.growbox .closing {
+  border-top: 1px solid var(--line);
+  padding-block: clamp(48px, 6vw, 72px) 80px;
+}
+.growbox .quote {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: clamp(1.3rem, 2.8vw, 1.9rem);
+  line-height: 1.3;
+  max-width: 24ch;
+  text-wrap: balance;
+}
+.growbox .foot {
+  margin-top: 40px;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+}
+
+/* ── pestañas ─────────────────────────────────────────── */
+.growbox .tabs {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--ground);
+  border-bottom: 1px solid var(--line);
+}
+.growbox .tabs-in {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.growbox .tabs-in::-webkit-scrollbar {
+  display: none;
+}
+.growbox .tab {
+  appearance: none;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 18px 18px 15px;
+  border-bottom: 3px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.growbox .tab:hover {
+  color: var(--ink);
+}
+.growbox .tab[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--coral);
+}
+.growbox .tab:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: -4px;
+  border-radius: 2px;
+}
+.growbox .panel[hidden] {
+  display: none;
+}
+
+/* ── capturas de pantalla reales ──────────────────────── */
+.growbox .shot {
+  margin: 0;
+}
+.growbox .shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  background: var(--sunk);
+}
+.growbox .shot figcaption {
+  margin-top: 12px;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  line-height: 1.6;
+  max-width: 70ch;
+}
+
+/* ── secuencia de pasos ───────────────────────────────── */
+.growbox .flow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 28px;
+}
+@media (min-width: 900px) {
+  .growbox .flow {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.growbox .flow > div {
+  background: var(--surface);
+  padding: 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.growbox .flow .n {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  color: var(--coral);
+  letter-spacing: 0.14em;
+}
+.growbox .flow h3 {
+  font-size: 1.02rem;
+}
+.growbox .flow p {
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+/* ── nota honesta ─────────────────────────────────────── */
+.growbox .caveat {
+  border-left: 3px solid var(--coral);
+  padding: 4px 0 4px 20px;
+  margin-top: 30px;
+  max-width: 64ch;
+}
+.growbox .caveat .eyebrow {
+  color: var(--coral);
+  display: block;
+  margin-bottom: 10px;
+}
+.growbox .caveat p {
+  color: var(--muted);
+  font-size: 0.97rem;
+}
+
+/* ── entidades ────────────────────────────────────────── */
+.growbox .ents {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 26px;
+}
+@media (min-width: 640px) {
+  .growbox .ents {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 980px) {
+  .growbox .ents {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.growbox .ents > div {
+  background: var(--surface);
+  padding: 20px;
+}
+.growbox .ents .k {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 9px;
+}
+.growbox .ents ul {
+  margin: 0;
+  padding-left: 1.05em;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+.growbox .ents li {
+  margin-bottom: 5px;
+}
+
+/* ── procedencia ──────────────────────────────────────── */
+.growbox .prov {
+  border-top: 1px solid var(--line);
+  padding-block: 34px 70px;
+}
+
+/* ── capturas de móvil ────────────────────────────────── */
+.growbox .phone {
+  margin: 0;
+  max-width: 300px;
+}
+.growbox .phone img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  background: var(--sunk);
+}
+.growbox .phones {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+  margin-top: 30px;
+  justify-items: center;
+}
+@media (min-width: 720px) {
+  .growbox .phones {
+    grid-template-columns: 1fr 1fr;
+    justify-items: start;
+  }
+}
+.growbox .phones .phone {
+  max-width: 340px;
+}
+.growbox .phone figcaption {
+  margin-top: 12px;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  line-height: 1.6;
+}
