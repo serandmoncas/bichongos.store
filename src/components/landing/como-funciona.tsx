@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const VARIABLES = ["Temperatura", "Humedad", "CO₂", "Luz"];
 
 export function ComoFunciona() {
@@ -42,6 +44,12 @@ export function ComoFunciona() {
           Cada lote tiene un identificador único con el historial completo de
           cultivo — del sustrato al plato en menos de 24 horas.
         </p>
+        <Link
+          href="/growbox"
+          className="mt-8 inline-block font-mono text-sm uppercase tracking-widest text-musgo underline underline-offset-4"
+        >
+          Ver la cápsula por dentro →
+        </Link>
       </div>
     </section>
   );
