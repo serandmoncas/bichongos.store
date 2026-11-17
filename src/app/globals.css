@@ -85,3 +85,12 @@ body {
   background: none;
   padding: 0;
 }
+
+/* Fotos dentro de un contenido: centradas, sin pasar de ~450 px de alto para
+   que las fotos verticales del celular no ocupen toda la pantalla. */
+.markdown-body img {
+  max-height: 28rem;
+  width: auto;
+  margin: 0.5rem auto;
+  border-radius: 0.5rem;
+}
